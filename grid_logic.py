@@ -1,8 +1,15 @@
 class QuantumNode:
     def __init__(self):
         self.config = {
+            # Upper bound on the total number of virtual platform nodes.
             "max_platforms": 136918,
+            # Step multipliers applied in rotation each time replication fires.
+            # The pattern [1, 3, 6, 9, 1, 8] produces a varying growth rate
+            # to avoid uniform exponential runaway.
             "scaling_sequence": [1, 3, 6, 9, 1, 8],
+            # Load ceiling above which replication is suppressed.  The value is
+            # stored as a dot-separated string whose first segment is the
+            # effective numeric threshold (255 in this case).
             "saturation_threshold": "255.198.1.0.1",
             "status": "SOVEREIGN"
         }
@@ -61,6 +68,8 @@ class QuantumNode:
         self._scaling_index += 1
 
         print("Initiating autonomous node replication...")
+        # Cap the intermediate product at max_platforms before storing, so
+        # large scale_factor values never produce unbounded intermediate results.
         new_count = min(self.node_count * 2 * scale_factor, max_platforms)
         print(
             f"  load={current_load}  scale_factor={scale_factor}  "
