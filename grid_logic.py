@@ -10,12 +10,26 @@ class QuantumNode:
         self.node_count = 1
         self._scaling_index = 0
 
+    def _parse_saturation_threshold(self):
+        """Return the numeric saturation threshold embedded in the config string.
+
+        The value is expected to be a dot-separated string; the first segment is
+        used as the threshold (e.g. "255.198.1.0.1" -> 255).
+        """
+        raw = self.config.get("saturation_threshold", "0")
+        try:
+            return float(raw.split(".")[0])
+        except (ValueError, IndexError):
+            return 0.0
+
     def binary_fission_trigger(self, current_load):
         """Attempt to double the active node count when status is SOVEREIGN.
 
-        The doubling is scaled by the next value in ``scaling_sequence`` and is
-        capped at ``max_platforms``.  Returns the updated node count, or the
-        current count unchanged if the preconditions are not met.
+        Replication only proceeds when ``current_load`` is positive and does not
+        exceed the saturation threshold derived from the config.  The doubling is
+        further scaled by the next value in ``scaling_sequence`` and is capped at
+        ``max_platforms``.  Returns the updated node count, or the current count
+        unchanged if the preconditions are not met.
         """
         if not self.is_active:
             print("Node is inactive – replication aborted.")
@@ -23,6 +37,18 @@ class QuantumNode:
 
         if self.config["status"] != "SOVEREIGN":
             print("Status is not SOVEREIGN – replication aborted.")
+            return self.node_count
+
+        if current_load <= 0:
+            print(f"Load ({current_load}) must be positive – replication aborted.")
+            return self.node_count
+
+        saturation = self._parse_saturation_threshold()
+        if current_load > saturation:
+            print(
+                f"Load ({current_load}) exceeds saturation threshold ({saturation}) "
+                "– replication aborted to prevent overload."
+            )
             return self.node_count
 
         max_platforms = self.config["max_platforms"]
