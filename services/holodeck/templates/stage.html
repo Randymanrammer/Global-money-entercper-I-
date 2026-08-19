@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holodeck Stage</title>
+  <style>
+    :root { --bg: #0b0c15; --panel: #151725; --accent: #00e5ff; --text: #e6e8f0; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header { padding: 1.5rem; border-bottom: 1px solid #2a2d3e; }
+    h1 { margin: 0; color: var(--accent); }
+    main { padding: 2rem; display: grid; gap: 1.5rem; }
+    .card { background: var(--panel); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+  </style>
+</head>
+<body>
+  <header><h1>Holodeck Visual Staging</h1></header>
+  <main>
+    <div class="card"><h2>Scene Preview</h2><p>Placeholder for interactive 3D / visual staging content.</p></div>
+    <div class="card"><h2>Controls</h2><button id="ping">Ping Ingress</button><pre id="out"></pre></div>
+  </main>
+  <script>
+    document.getElementById('ping').addEventListener('click', async () => {
+      const res = await fetch('/api/v1/communicate');
+      const json = await res.json();
+      document.getElementById('out').textContent = JSON.stringify(json, null, 2);
+    });
+  </script>
+</body>
+</html>

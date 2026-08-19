@@ -1,0 +1,25 @@
+{
+  "name": "global-money-entercper-platform",
+  "version": "1.0.0",
+  "description": "Multi-tier platform: ingress, holodeck, interceptor, vault, and ops services.",
+  "main": "services/ingress/index.js",
+  "scripts": {
+    "start": "node services/ingress/index.js",
+    "dev": "node --watch services/ingress/index.js",
+    "test": "node --test 'services/**/*.test.js'",
+    "lint": "npx eslint services/**/*.js",
+    "build": "echo 'Build complete'",
+    "deploy": "bash deploy.sh"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.5.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "MIT"
+}
