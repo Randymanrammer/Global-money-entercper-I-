@@ -58,7 +58,7 @@ jobs:
         service: [ingress, holodeck, interceptor, vault, ops]
     env:
       GCP_REGION: ${{ vars.GCP_REGION || 'us-central1' }}
-      SETTLEMENT_SHARED_SECRET: ${{ secrets.SETTLEMENT_SHARED_SECRET }}
+      GCP_SETTLEMENT_SECRET_NAME: ${{ vars.GCP_SETTLEMENT_SECRET_NAME || 'settlement-shared-secret' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,4 +80,5 @@ jobs:
             --source . \
             --region=${GCP_REGION} \
             --allow-unauthenticated \
-            --set-env-vars=SERVICE_TARGET=${{ matrix.service }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${GCP_REGION},SETTLEMENT_SHARED_SECRET=${SETTLEMENT_SHARED_SECRET}
+            --set-env-vars=SERVICE_TARGET=${{ matrix.service }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${GCP_REGION},GCP_SETTLEMENT_SECRET_NAME=${GCP_SETTLEMENT_SECRET_NAME} \
+            --set-secrets=SETTLEMENT_SHARED_SECRET=${GCP_SETTLEMENT_SECRET_NAME}:latest

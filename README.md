@@ -10,6 +10,7 @@ Public HTTPS ingress service built on Express.
 - `GET /health` returns aggregated platform health.
 - `POST /api/v1/communicate` accepts external communication payloads, forwards them to the interceptor, optionally routes settlement instructions through the vault, and returns a visualization payload for the holodeck dashboard.
 - `GET /dashboard` serves the shared diagnostic dashboard.
+- Supports local in-process dispatch or HTTP dispatch to a separately deployed interceptor using `INTERCEPTOR_BASE_URL`.
 
 ### 2. `/services/holodeck`
 Visual staging and diagnostic UI service.
@@ -21,7 +22,7 @@ Visual staging and diagnostic UI service.
 ### 3. `/services/interceptor`
 Automation and queue-processing service.
 
-- Provides a high-velocity in-memory queue.
+- Provides a high-velocity in-memory queue counter with per-job UUIDs.
 - `POST /api/v1/queue` accepts direct pipeline jobs.
 - `POST /api/v1/webhooks/:source` accepts generic webhook events for automation fan-in.
 - Returns queue depth, active jobs, and processed totals from `/health`.
@@ -30,6 +31,7 @@ Automation and queue-processing service.
 Settlement routing and payload verification service.
 
 - Verifies HMAC SHA-256 payload signatures.
+- Applies in-memory rate limiting to settlement verification and routing endpoints.
 - Routes settlement instructions to `domestic-usd`, `global-wire`, or `manual-review` tracks.
 - Exposes `POST /api/v1/settlements/verify`, `POST /api/v1/settlements/route`, and `GET /health`.
 
@@ -60,12 +62,12 @@ If `SERVICE_TARGET` is omitted, the platform starts `ingress` by default on port
 - `Dockerfile` – production Cloud Run image definition.
 - `deploy.sh` – deploys all five services to Google Cloud Run.
 - `.github/workflows/deploy.yml` – CI and Cloud Run deployment workflow.
-- `tests/platform.test.js` – basic runtime verification tests.
+- `tests/platform.test.js` – runtime verification tests.
 
 ## How the programs communicate
 
 1. External clients call the **ingress** service.
-2. Ingress normalizes each message and hands it to the **interceptor** queue pipeline.
+2. Ingress normalizes each message and hands it to the **interceptor** queue pipeline, either locally or through `INTERCEPTOR_BASE_URL` over HTTP using Axios.
 3. When settlement data is supplied, ingress forwards it to the **vault** for verification and route selection.
 4. Ingress requests a visualization summary from the **holodeck** model builder.
 5. All services publish request and event data into the **ops** telemetry layer.
@@ -120,8 +122,9 @@ The script enables the required Google Cloud APIs and deploys these Cloud Run se
 
 - `GCP_PROJECT_ID` – Google Cloud project ID.
 - `GCP_REGION` – deployment region, defaults to `us-central1`.
-- `SETTLEMENT_SHARED_SECRET` – HMAC secret used by the vault when verifying settlement payloads.
+- `GCP_SETTLEMENT_SECRET_NAME` – Secret Manager secret name bound into Cloud Run as `SETTLEMENT_SHARED_SECRET`.
 - `INTERCEPTOR_QUEUE_LATENCY_MS` – optional queue simulation latency.
+- `INTERCEPTOR_BASE_URL` – optional URL for HTTP dispatch from ingress to an external interceptor deployment.
 
 ## CI/CD workflow
 
@@ -133,6 +136,8 @@ The GitHub Actions workflow performs these steps on push and pull request events
 4. Smoke-tests each `SERVICE_TARGET`.
 5. Builds the production container.
 6. Deploys each service to Cloud Run on pushes to `main`.
+
+Deployment binds the settlement secret through Cloud Run secret integration rather than a plaintext environment value.
 
 ## Dashboard
 

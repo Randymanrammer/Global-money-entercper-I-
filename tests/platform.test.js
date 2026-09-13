@@ -55,6 +55,53 @@ test('ingress communicate queues interceptor work and optional settlement routin
   });
 });
 
+test('ingress can dispatch to an external interceptor over axios', async () => {
+  const originalBaseUrl = process.env.INTERCEPTOR_BASE_URL;
+  const stubServer = http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/api/v1/queue') {
+      res.writeHead(202, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'queued',
+        result: {
+          pipeline: 'manual-queue',
+          jobId: 'remote-job',
+          queueDepth: 0,
+          payload: { origin: 'remote' }
+        }
+      }));
+      return;
+    }
+
+    res.writeHead(404);
+    res.end();
+  });
+
+  await new Promise((resolve) => stubServer.listen(0, resolve));
+  process.env.INTERCEPTOR_BASE_URL = `http://127.0.0.1:${stubServer.address().port}`;
+
+  try {
+    await withServer('ingress', async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/v1/communicate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'external dispatch' })
+      });
+
+      const payload = await response.json();
+      assert.equal(response.status, 202);
+      assert.equal(payload.interceptor.transport, 'http');
+      assert.equal(payload.interceptor.jobId, 'remote-job');
+    });
+  } finally {
+    if (originalBaseUrl === undefined) {
+      delete process.env.INTERCEPTOR_BASE_URL;
+    } else {
+      process.env.INTERCEPTOR_BASE_URL = originalBaseUrl;
+    }
+    await new Promise((resolve, reject) => stubServer.close((error) => (error ? reject(error) : resolve())));
+  }
+});
+
 test('holodeck serves dashboard html', async () => {
   await withServer('holodeck', async (baseUrl) => {
     const response = await fetch(`${baseUrl}/dashboard`);

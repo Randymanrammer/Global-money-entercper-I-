@@ -12,7 +12,9 @@ function getRuntimeConfig(serviceTarget = process.env.SERVICE_TARGET || 'ingress
     gcpProjectId: process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'local-project',
     gcpRegion: process.env.GCP_REGION || 'us-central1',
     settlementSecret: process.env.SETTLEMENT_SHARED_SECRET || 'local-dev-secret',
-    queueLatencyMs: Number(process.env.INTERCEPTOR_QUEUE_LATENCY_MS || 25)
+    settlementSecretName: process.env.GCP_SETTLEMENT_SECRET_NAME || 'settlement-shared-secret',
+    queueLatencyMs: Number(process.env.INTERCEPTOR_QUEUE_LATENCY_MS || 25),
+    interceptorBaseUrl: process.env.INTERCEPTOR_BASE_URL || ''
   };
 }
 

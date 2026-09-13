@@ -3,7 +3,7 @@ const express = require('express');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
 
 const settlementLedger = [];
-const verificationRateLimit = new Map();
+const rateLimitState = new Map();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
 
@@ -42,13 +42,17 @@ function verifyPayload(payload, signature, secret) {
   };
 }
 
+function createTransactionId() {
+  return crypto.randomUUID();
+}
+
 function routeTransaction(settlement = {}, secret = process.env.SETTLEMENT_SHARED_SECRET || 'local-dev-secret') {
   const amount = Number(settlement.amount || 0);
   const route = amount >= 10000 ? 'manual-review' : settlement.currency === 'USD' ? 'domestic-usd' : 'global-wire';
   const verificationPayload = settlement.payload || Object.fromEntries(Object.entries(settlement).filter(([key]) => key !== 'signature'));
   const verification = verifyPayload(verificationPayload, settlement.signature, secret);
   const record = {
-    transactionId: settlement.transactionId || `txn-${Date.now()}`,
+    transactionId: settlement.transactionId || createTransactionId(),
     route,
     amount,
     currency: settlement.currency || 'USD',
@@ -76,13 +80,13 @@ function getHealth() {
   };
 }
 
-function enforceVerificationRateLimit(req, res, next) {
+function enforceRateLimit(req, res, next) {
   const clientKey = req.ip || req.socket.remoteAddress || 'unknown-client';
   const now = Date.now();
-  const existing = verificationRateLimit.get(clientKey);
+  const existing = rateLimitState.get(clientKey);
 
   if (!existing || now - existing.windowStartedAt >= RATE_LIMIT_WINDOW_MS) {
-    verificationRateLimit.set(clientKey, { count: 1, windowStartedAt: now });
+    rateLimitState.set(clientKey, { count: 1, windowStartedAt: now });
     return next();
   }
 
@@ -106,12 +110,12 @@ function createApp({ config }) {
     res.json(getHealth());
   });
 
-  app.post('/api/v1/settlements/verify', enforceVerificationRateLimit, (req, res) => {
+  app.post('/api/v1/settlements/verify', enforceRateLimit, (req, res) => {
     const { payload = {}, signature } = req.body || {};
     res.json(verifyPayload(payload, signature, config.settlementSecret));
   });
 
-  app.post('/api/v1/settlements/route', (req, res) => {
+  app.post('/api/v1/settlements/route', enforceRateLimit, (req, res) => {
     const record = routeTransaction(req.body || {}, config.settlementSecret);
     res.status(202).json({ status: 'accepted', record });
   });

@@ -1,3 +1,4 @@
+const axios = require('axios');
 const express = require('express');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
 const { handleCommunication, getHealth: getInterceptorHealth } = require('../interceptor/server');
@@ -29,6 +30,31 @@ function createHealthResponse(telemetry) {
   };
 }
 
+async function dispatchCommunication(payload, config) {
+  if (!config.interceptorBaseUrl) {
+    return handleCommunication(payload, {
+      queueLatencyMs: config.queueLatencyMs,
+      pipeline: 'ingress-communication'
+    });
+  }
+
+  const response = await axios.post(
+    `${config.interceptorBaseUrl.replace(/\/$/, '')}/api/v1/queue`,
+    payload,
+    {
+      timeout: 5000,
+      headers: {
+        'content-type': 'application/json'
+      }
+    }
+  );
+
+  return {
+    transport: 'http',
+    ...response.data.result
+  };
+}
+
 function createApp({ config, telemetry }) {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
@@ -49,14 +75,11 @@ function createApp({ config, telemetry }) {
     }
 
     const trackingId = `msg-${Date.now()}`;
-    const interceptorResult = await handleCommunication({
+    const interceptorResult = await dispatchCommunication({
       origin: req.body.origin || 'public-ingress',
       message: req.body.message,
       metadata: { ...(req.body.metadata || {}), trackingId }
-    }, {
-      queueLatencyMs: config.queueLatencyMs,
-      pipeline: 'ingress-communication'
-    });
+    }, config);
 
     const settlement = req.body.settlement ? routeTransaction(req.body.settlement, config.settlementSecret) : null;
     const visualization = buildVisualizationModel(telemetry.getSnapshot());
@@ -79,5 +102,6 @@ function createApp({ config, telemetry }) {
 module.exports = {
   createApp,
   createHealthResponse,
+  dispatchCommunication,
   validateCommunicationRequest
 };

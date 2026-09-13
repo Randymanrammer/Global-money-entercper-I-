@@ -3,7 +3,7 @@ set -euo pipefail
 
 PROJECT_ID="${GCP_PROJECT_ID:-$(gcloud config get-value project 2>/dev/null || true)}"
 REGION="${GCP_REGION:-us-central1}"
-SETTLEMENT_SECRET="${SETTLEMENT_SHARED_SECRET:-}"
+SETTLEMENT_SECRET_NAME="${GCP_SETTLEMENT_SECRET_NAME:-settlement-shared-secret}"
 SERVICES=(ingress holodeck interceptor vault ops)
 
 if [[ -z "${PROJECT_ID}" ]]; then
@@ -11,8 +11,8 @@ if [[ -z "${PROJECT_ID}" ]]; then
   exit 1
 fi
 
-if [[ -z "${SETTLEMENT_SECRET}" ]]; then
-  echo "[error] SETTLEMENT_SHARED_SECRET must be set before deployment." >&2
+if [[ -z "${SETTLEMENT_SECRET_NAME}" ]]; then
+  echo "[error] GCP_SETTLEMENT_SECRET_NAME must be set before deployment." >&2
   exit 1
 fi
 
@@ -32,7 +32,8 @@ for service in "${SERVICES[@]}"; do
     --region="${REGION}" \
     --project="${PROJECT_ID}" \
     --allow-unauthenticated \
-    --set-env-vars="SERVICE_TARGET=${service},GCP_PROJECT_ID=${PROJECT_ID},GCP_REGION=${REGION},SETTLEMENT_SHARED_SECRET=${SETTLEMENT_SECRET}"
+    --set-env-vars="SERVICE_TARGET=${service},GCP_PROJECT_ID=${PROJECT_ID},GCP_REGION=${REGION},GCP_SETTLEMENT_SECRET_NAME=${SETTLEMENT_SECRET_NAME}" \
+    --set-secrets="SETTLEMENT_SHARED_SECRET=${SETTLEMENT_SECRET_NAME}:latest"
 done
 
 echo "Deployment finished for: ${SERVICES[*]}"

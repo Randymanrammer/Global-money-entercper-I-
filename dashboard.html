@@ -61,12 +61,12 @@
       color: white;
       margin: 8px 0;
     }
-    .service-list, .events {
+    .service-list {
       display: grid;
       gap: 14px;
       margin-top: 18px;
     }
-    .service-row, .event-row {
+    .service-row {
       padding: 16px;
       border-radius: 16px;
       background: rgba(15, 23, 42, 0.72);
@@ -109,6 +109,12 @@
       font-size: 0.9rem;
       max-height: 320px;
       overflow: auto;
+    }
+    .service-meta {
+      color: var(--muted);
+      display: block;
+      margin-top: 6px;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -157,11 +163,22 @@
     function renderService(name, payload) {
       const row = document.createElement('div');
       row.className = 'service-row';
-      row.innerHTML = `
-        <strong>${name}</strong><br />
-        <span>Status: <code>${payload.status || 'unknown'}</code></span><br />
-        <span>${JSON.stringify(payload)}</span>
-      `;
+
+      const title = document.createElement('strong');
+      title.textContent = name;
+
+      const status = document.createElement('div');
+      const label = document.createElement('span');
+      label.textContent = 'Status: ';
+      const badge = document.createElement('code');
+      badge.textContent = payload.status || 'unknown';
+      status.append(label, badge);
+
+      const meta = document.createElement('span');
+      meta.className = 'service-meta';
+      meta.textContent = JSON.stringify(payload);
+
+      row.append(title, status, meta);
       return row;
     }
 

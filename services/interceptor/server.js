@@ -1,3 +1,4 @@
+const { randomUUID } = require('crypto');
 const express = require('express');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
 
@@ -28,7 +29,7 @@ async function executeJob(job, latencyMs = Number(process.env.INTERCEPTOR_QUEUE_
 
   const result = {
     queueDepth: interceptorState.queueDepth,
-    jobId: `job-${Date.now()}`,
+    jobId: randomUUID(),
     pipeline: job.pipeline,
     processedAt: new Date().toISOString(),
     payload: job.payload
