@@ -55,6 +55,32 @@ test('ingress communicate queues interceptor work and optional settlement routin
   });
 });
 
+test('ingress returns structured JSON errors for failed remote interceptor dispatches', async () => {
+  const originalBaseUrl = process.env.INTERCEPTOR_BASE_URL;
+  process.env.INTERCEPTOR_BASE_URL = 'http://127.0.0.1:1';
+
+  try {
+    await withServer('ingress', async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/v1/communicate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'external dispatch' })
+      });
+
+      const payload = await response.json();
+      assert.equal(response.status, 502);
+      assert.equal(payload.status, 'failed');
+      assert.match(payload.error, /Unable to dispatch/);
+    });
+  } finally {
+    if (originalBaseUrl === undefined) {
+      delete process.env.INTERCEPTOR_BASE_URL;
+    } else {
+      process.env.INTERCEPTOR_BASE_URL = originalBaseUrl;
+    }
+  }
+});
+
 test('ingress can dispatch to an external interceptor over axios', async () => {
   const originalBaseUrl = process.env.INTERCEPTOR_BASE_URL;
   const stubServer = http.createServer((req, res) => {
@@ -155,6 +181,23 @@ test('vault verify endpoint rejects invalid signatures', async () => {
     const result = await response.json();
     assert.equal(response.status, 200);
     assert.deepEqual(result, { verified: false, reason: 'signature-mismatch' });
+  });
+});
+
+test('vault verify endpoint rate limits repeated requests', async () => {
+  await withServer('vault', async (baseUrl) => {
+    let lastStatus = 200;
+
+    for (let index = 0; index < 31; index += 1) {
+      const response = await fetch(`${baseUrl}/api/v1/settlements/verify`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ payload: { amount: index }, signature: 'invalid-signature' })
+      });
+      lastStatus = response.status;
+    }
+
+    assert.equal(lastStatus, 429);
   });
 });
 

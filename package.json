@@ -1,5 +1,5 @@
 {
-  "name": "global-money-entercper-platform",
+  "name": "global-money-interceptor-platform",
   "version": "1.0.0",
   "description": "Multi-tier Cloud Run platform with ingress, holodeck, interceptor, vault, and ops services.",
   "main": "server.js",
@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "axios": "^1.20.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0"
   },
   "overrides": {
     "qs": "^6.16.0"

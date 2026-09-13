@@ -1,3 +1,4 @@
+const { randomUUID } = require('crypto');
 const axios = require('axios');
 const express = require('express');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
@@ -74,26 +75,35 @@ function createApp({ config, telemetry }) {
       return res.status(400).json({ status: 'rejected', error: validationError });
     }
 
-    const trackingId = `msg-${Date.now()}`;
-    const interceptorResult = await dispatchCommunication({
-      origin: req.body.origin || 'public-ingress',
-      message: req.body.message,
-      metadata: { ...(req.body.metadata || {}), trackingId }
-    }, config);
+    try {
+      const trackingId = randomUUID();
+      const interceptorResult = await dispatchCommunication({
+        origin: req.body.origin || 'public-ingress',
+        message: req.body.message,
+        metadata: { ...(req.body.metadata || {}), trackingId }
+      }, config);
 
-    const settlement = req.body.settlement ? routeTransaction(req.body.settlement, config.settlementSecret) : null;
-    const visualization = buildVisualizationModel(telemetry.getSnapshot());
+      const settlement = req.body.settlement ? routeTransaction(req.body.settlement, config.settlementSecret) : null;
+      const visualization = buildVisualizationModel(telemetry.getSnapshot());
 
-    recordEvent('ingress', 'communication.completed', { trackingId, settlementRouted: Boolean(settlement) });
+      recordEvent('ingress', 'communication.completed', { trackingId, settlementRouted: Boolean(settlement) });
 
-    return res.status(202).json({
-      status: 'accepted',
-      trackingId,
-      acceptedAt: new Date().toISOString(),
-      interceptor: interceptorResult,
-      settlement,
-      visualization
-    });
+      return res.status(202).json({
+        status: 'accepted',
+        trackingId,
+        acceptedAt: new Date().toISOString(),
+        interceptor: interceptorResult,
+        settlement,
+        visualization
+      });
+    } catch (error) {
+      recordEvent('ingress', 'communication.failed', { message: error.message });
+      return res.status(502).json({
+        status: 'failed',
+        error: 'Unable to dispatch communication request.',
+        details: error.message
+      });
+    }
   });
 
   return app;

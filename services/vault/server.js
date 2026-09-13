@@ -1,11 +1,21 @@
 const crypto = require('crypto');
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
 
 const settlementLedger = [];
-const rateLimitState = new Map();
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 30;
+const verificationLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      verified: false,
+      reason: 'rate-limit-exceeded'
+    });
+  }
+});
 
 function stableSort(value) {
   if (Array.isArray(value)) {
@@ -74,31 +84,10 @@ function getHealth() {
     recentSettlements: settlementLedger.slice(0, 5),
     ledgerDepth: settlementLedger.length,
     verificationRateLimit: {
-      windowMs: RATE_LIMIT_WINDOW_MS,
-      maxRequests: RATE_LIMIT_MAX_REQUESTS
+      windowMs: verificationLimiter.windowMs,
+      maxRequests: verificationLimiter.limit
     }
   };
-}
-
-function enforceRateLimit(req, res, next) {
-  const clientKey = req.ip || req.socket.remoteAddress || 'unknown-client';
-  const now = Date.now();
-  const existing = rateLimitState.get(clientKey);
-
-  if (!existing || now - existing.windowStartedAt >= RATE_LIMIT_WINDOW_MS) {
-    rateLimitState.set(clientKey, { count: 1, windowStartedAt: now });
-    return next();
-  }
-
-  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return res.status(429).json({
-      verified: false,
-      reason: 'rate-limit-exceeded'
-    });
-  }
-
-  existing.count += 1;
-  return next();
 }
 
 function createApp({ config }) {
@@ -110,12 +99,12 @@ function createApp({ config }) {
     res.json(getHealth());
   });
 
-  app.post('/api/v1/settlements/verify', enforceRateLimit, (req, res) => {
+  app.post('/api/v1/settlements/verify', verificationLimiter, (req, res) => {
     const { payload = {}, signature } = req.body || {};
     res.json(verifyPayload(payload, signature, config.settlementSecret));
   });
 
-  app.post('/api/v1/settlements/route', enforceRateLimit, (req, res) => {
+  app.post('/api/v1/settlements/route', verificationLimiter, (req, res) => {
     const record = routeTransaction(req.body || {}, config.settlementSecret);
     res.status(202).json({ status: 'accepted', record });
   });

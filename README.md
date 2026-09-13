@@ -1,4 +1,4 @@
-# Global Money Entercper Platform
+# Global Money Interceptor Platform
 
 This repository contains a modular five-program Node.js platform designed for Google Cloud Run. Each program can be deployed independently from the same codebase by setting `SERVICE_TARGET`.
 
