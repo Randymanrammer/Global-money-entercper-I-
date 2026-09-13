@@ -2,10 +2,11 @@ const express = require('express');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
 
 const interceptorState = {
-  queue: [],
+  queueDepth: 0,
   processed: 0,
   activeJobs: 0,
-  webhooksReceived: 0
+  webhooksReceived: 0,
+  recentJobs: []
 };
 
 function normalizePayload(payload = {}) {
@@ -18,20 +19,24 @@ function normalizePayload(payload = {}) {
 }
 
 async function executeJob(job, latencyMs = Number(process.env.INTERCEPTOR_QUEUE_LATENCY_MS || 25)) {
-  interceptorState.queue.push(job);
+  interceptorState.queueDepth += 1;
   interceptorState.activeJobs += 1;
   await new Promise((resolve) => setTimeout(resolve, latencyMs));
-  const nextJob = interceptorState.queue.shift();
+  interceptorState.queueDepth -= 1;
   interceptorState.activeJobs -= 1;
   interceptorState.processed += 1;
 
-  return {
-    queueDepth: interceptorState.queue.length,
+  const result = {
+    queueDepth: interceptorState.queueDepth,
     jobId: `job-${Date.now()}`,
-    pipeline: nextJob.pipeline,
+    pipeline: job.pipeline,
     processedAt: new Date().toISOString(),
-    payload: nextJob.payload
+    payload: job.payload
   };
+
+  interceptorState.recentJobs.unshift(result);
+  interceptorState.recentJobs = interceptorState.recentJobs.slice(0, 10);
+  return result;
 }
 
 async function handleCommunication(payload, options = {}) {
@@ -57,10 +62,11 @@ function getHealth() {
   return {
     service: 'interceptor',
     status: 'ok',
-    queueDepth: interceptorState.queue.length,
+    queueDepth: interceptorState.queueDepth,
     activeJobs: interceptorState.activeJobs,
     processed: interceptorState.processed,
-    webhooksReceived: interceptorState.webhooksReceived
+    webhooksReceived: interceptorState.webhooksReceived,
+    recentJobs: interceptorState.recentJobs
   };
 }
 

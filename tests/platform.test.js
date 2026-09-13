@@ -76,6 +76,38 @@ test('vault verify endpoint rejects missing signatures', async () => {
     assert.equal(response.status, 200);
     assert.equal(payload.verified, false);
     assert.equal(payload.reason, 'missing-signature');
+    assert.equal(Object.hasOwn(payload, 'expectedSignature'), false);
+  });
+});
+
+test('vault verify endpoint accepts valid signatures', async () => {
+  const payload = { amount: 42, currency: 'USD' };
+  const signature = createSignature(payload, 'local-dev-secret');
+
+  await withServer('vault', async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/settlements/verify`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ payload, signature })
+    });
+
+    const result = await response.json();
+    assert.equal(response.status, 200);
+    assert.deepEqual(result, { verified: true, reason: 'verified' });
+  });
+});
+
+test('vault verify endpoint rejects invalid signatures', async () => {
+  await withServer('vault', async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/settlements/verify`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: { amount: 42 }, signature: 'invalid-signature' })
+    });
+
+    const result = await response.json();
+    assert.equal(response.status, 200);
+    assert.deepEqual(result, { verified: false, reason: 'signature-mismatch' });
   });
 });
 

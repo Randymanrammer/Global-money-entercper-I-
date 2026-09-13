@@ -3,10 +3,16 @@ set -euo pipefail
 
 PROJECT_ID="${GCP_PROJECT_ID:-$(gcloud config get-value project 2>/dev/null || true)}"
 REGION="${GCP_REGION:-us-central1}"
+SETTLEMENT_SECRET="${SETTLEMENT_SHARED_SECRET:-}"
 SERVICES=(ingress holodeck interceptor vault ops)
 
 if [[ -z "${PROJECT_ID}" ]]; then
   echo "[error] No active Google Cloud project found. Set GCP_PROJECT_ID or run 'gcloud config set project ...'." >&2
+  exit 1
+fi
+
+if [[ -z "${SETTLEMENT_SECRET}" ]]; then
+  echo "[error] SETTLEMENT_SHARED_SECRET must be set before deployment." >&2
   exit 1
 fi
 
@@ -26,7 +32,7 @@ for service in "${SERVICES[@]}"; do
     --region="${REGION}" \
     --project="${PROJECT_ID}" \
     --allow-unauthenticated \
-    --set-env-vars="SERVICE_TARGET=${service},GCP_PROJECT_ID=${PROJECT_ID},GCP_REGION=${REGION}"
+    --set-env-vars="SERVICE_TARGET=${service},GCP_PROJECT_ID=${PROJECT_ID},GCP_REGION=${REGION},SETTLEMENT_SHARED_SECRET=${SETTLEMENT_SECRET}"
 done
 
 echo "Deployment finished for: ${SERVICES[*]}"

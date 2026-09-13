@@ -3,6 +3,9 @@ const express = require('express');
 const { attachTelemetry, recordEvent } = require('../ops/telemetry');
 
 const settlementLedger = [];
+const verificationRateLimit = new Map();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 30;
 
 function stableSort(value) {
   if (Array.isArray(value)) {
@@ -35,8 +38,6 @@ function verifyPayload(payload, signature, secret) {
   const verified = sameLength && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
   return {
     verified,
-    expectedSignature,
-    signature,
     reason: verified ? 'verified' : 'signature-mismatch'
   };
 }
@@ -67,8 +68,33 @@ function getHealth() {
     service: 'vault',
     status: 'ok',
     recentSettlements: settlementLedger.slice(0, 5),
-    ledgerDepth: settlementLedger.length
+    ledgerDepth: settlementLedger.length,
+    verificationRateLimit: {
+      windowMs: RATE_LIMIT_WINDOW_MS,
+      maxRequests: RATE_LIMIT_MAX_REQUESTS
+    }
   };
+}
+
+function enforceVerificationRateLimit(req, res, next) {
+  const clientKey = req.ip || req.socket.remoteAddress || 'unknown-client';
+  const now = Date.now();
+  const existing = verificationRateLimit.get(clientKey);
+
+  if (!existing || now - existing.windowStartedAt >= RATE_LIMIT_WINDOW_MS) {
+    verificationRateLimit.set(clientKey, { count: 1, windowStartedAt: now });
+    return next();
+  }
+
+  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return res.status(429).json({
+      verified: false,
+      reason: 'rate-limit-exceeded'
+    });
+  }
+
+  existing.count += 1;
+  return next();
 }
 
 function createApp({ config }) {
@@ -80,7 +106,7 @@ function createApp({ config }) {
     res.json(getHealth());
   });
 
-  app.post('/api/v1/settlements/verify', (req, res) => {
+  app.post('/api/v1/settlements/verify', enforceVerificationRateLimit, (req, res) => {
     const { payload = {}, signature } = req.body || {};
     res.json(verifyPayload(payload, signature, config.settlementSecret));
   });
