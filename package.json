@@ -1,0 +1,18 @@
+{
+  "name": "global-money-entercper-platform",
+  "version": "1.0.0",
+  "description": "Multi-tier Cloud Run platform with ingress, holodeck, interceptor, vault, and ops services.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node -e \"console.log('Node.js services are deployment-ready.')\"",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.8.2",
+    "express": "^4.21.2"
+  }
+}

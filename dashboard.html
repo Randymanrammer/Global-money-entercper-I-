@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Money Entercper Platform Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09111f;
+      --panel: rgba(13, 24, 43, 0.88);
+      --accent: #5eead4;
+      --accent-2: #60a5fa;
+      --text: #ecfeff;
+      --muted: #93c5fd;
+      --danger: #fca5a5;
+      --border: rgba(148, 163, 184, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, #123059 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+    .hero, .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    }
+    .hero {
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .eyebrow {
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      margin-bottom: 10px;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 3.6rem); }
+    p { color: var(--muted); line-height: 1.6; }
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 20px;
+    }
+    .panel { padding: 18px; }
+    .metric {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: white;
+      margin: 8px 0;
+    }
+    .service-list, .events {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .service-row, .event-row {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(96, 165, 250, 0.16);
+    }
+    code {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(94, 234, 212, 0.12);
+      color: var(--accent);
+    }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      color: #082032;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+    }
+    .status { color: var(--muted); font-size: 0.95rem; }
+    .warn { color: var(--danger); }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(2, 6, 23, 0.82);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 0;
+      font-size: 0.9rem;
+      max-height: 320px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">Holodeck Program</div>
+      <h1>Global Money Entercper Diagnostic Dashboard</h1>
+      <p>
+        Live visibility for the five-program stack: ingress, holodeck, interceptor, vault, and ops.
+        Use this dashboard to confirm Cloud Run routing, queue activity, settlement verification, and telemetry health.
+      </p>
+      <div class="toolbar">
+        <button id="refresh">Refresh health snapshot</button>
+        <div class="status" id="status">Waiting for first health poll...</div>
+      </div>
+    </section>
+
+    <section class="grid" id="metric-grid">
+      <article class="panel"><div>Service target</div><div class="metric" id="service-target">--</div><div>Current container role</div></article>
+      <article class="panel"><div>Queue depth</div><div class="metric" id="queue-depth">--</div><div>Interceptor backlog</div></article>
+      <article class="panel"><div>Ledger depth</div><div class="metric" id="ledger-depth">--</div><div>Recent vault transactions</div></article>
+      <article class="panel"><div>Recent events</div><div class="metric" id="recent-events">--</div><div>Ops telemetry events</div></article>
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+      <h2>Service health</h2>
+      <div class="service-list" id="service-list"></div>
+    </section>
+
+    <section class="panel" style="margin-top: 24px;">
+      <h2>Telemetry snapshot</h2>
+      <pre id="telemetry-json">{}</pre>
+    </section>
+  </main>
+
+  <script>
+    const statusNode = document.getElementById('status');
+    const targetNode = document.getElementById('service-target');
+    const queueNode = document.getElementById('queue-depth');
+    const ledgerNode = document.getElementById('ledger-depth');
+    const eventsNode = document.getElementById('recent-events');
+    const serviceList = document.getElementById('service-list');
+    const telemetryNode = document.getElementById('telemetry-json');
+
+    function renderService(name, payload) {
+      const row = document.createElement('div');
+      row.className = 'service-row';
+      row.innerHTML = `
+        <strong>${name}</strong><br />
+        <span>Status: <code>${payload.status || 'unknown'}</code></span><br />
+        <span>${JSON.stringify(payload)}</span>
+      `;
+      return row;
+    }
+
+    async function loadHealth() {
+      statusNode.textContent = 'Loading /health ...';
+      statusNode.classList.remove('warn');
+      try {
+        const response = await fetch('/health');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        const downstream = payload.downstream || payload.services || {};
+        const telemetry = payload.telemetry || {};
+        targetNode.textContent = payload.service || payload.runtime?.serviceTarget || 'unknown';
+        queueNode.textContent = downstream.interceptor?.queueDepth ?? '--';
+        ledgerNode.textContent = downstream.vault?.ledgerDepth ?? '--';
+        eventsNode.textContent = telemetry.recentEvents?.length ?? '--';
+        serviceList.innerHTML = '';
+        serviceList.appendChild(renderService(payload.service || 'service', { status: payload.status }));
+        Object.entries(downstream).forEach(([name, value]) => serviceList.appendChild(renderService(name, value)));
+        telemetryNode.textContent = JSON.stringify(payload, null, 2);
+        statusNode.textContent = `Healthy at ${new Date().toLocaleTimeString()}`;
+      } catch (error) {
+        statusNode.textContent = `Health request failed: ${error.message}`;
+        statusNode.classList.add('warn');
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', loadHealth);
+    loadHealth();
+    setInterval(loadHealth, 15000);
+  </script>
+</body>
+</html>

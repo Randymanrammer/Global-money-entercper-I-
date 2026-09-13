@@ -1,0 +1,77 @@
+name: Multi-service CI and deploy
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'copilot/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ingress, holodeck, interceptor, vault, ops]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build runtime contract
+        run: npm run build
+
+      - name: Smoke test service target
+        run: |
+          SERVICE_TARGET=${{ matrix.service }} timeout 10s npm start || test $? -eq 124
+
+      - name: Build Cloud Run container
+        run: docker build --build-arg SERVICE_TARGET=${{ matrix.service }} -t local/${{ matrix.service }} .
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref_name == 'main'
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ingress, holodeck, interceptor, vault, ops]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy service to Cloud Run
+        run: |
+          gcloud run deploy global-money-${{ matrix.service }} \
+            --source . \
+            --region=${{ secrets.GCP_REGION || 'us-central1' }} \
+            --allow-unauthenticated \
+            --set-env-vars=SERVICE_TARGET=${{ matrix.service }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${{ secrets.GCP_REGION || 'us-central1' }}
