@@ -44,7 +44,8 @@ function verifyPayload(payload, signature, secret) {
 function routeTransaction(settlement = {}, secret = process.env.SETTLEMENT_SHARED_SECRET || 'local-dev-secret') {
   const amount = Number(settlement.amount || 0);
   const route = amount >= 10000 ? 'manual-review' : settlement.currency === 'USD' ? 'domestic-usd' : 'global-wire';
-  const verification = verifyPayload(settlement.payload || settlement, settlement.signature, secret);
+  const verificationPayload = settlement.payload || Object.fromEntries(Object.entries(settlement).filter(([key]) => key !== 'signature'));
+  const verification = verifyPayload(verificationPayload, settlement.signature, secret);
   const record = {
     transactionId: settlement.transactionId || `txn-${Date.now()}`,
     route,
