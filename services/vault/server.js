@@ -31,7 +31,8 @@ function verifyPayload(payload, signature, secret) {
   }
 
   const expectedSignature = createSignature(payload, secret);
-  const verified = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+  const sameLength = typeof signature === 'string' && signature.length === expectedSignature.length;
+  const verified = sameLength && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
   return {
     verified,
     expectedSignature,

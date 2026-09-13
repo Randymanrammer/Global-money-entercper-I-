@@ -1,6 +1,6 @@
 const http = require('http');
 const { getRuntimeConfig, serviceTargets } = require('./services/ops/config');
-const { telemetry } = require('./services/ops/telemetry');
+const telemetry = require('./services/ops/telemetry');
 const { createApp: createIngressApp } = require('./services/ingress/server');
 const { createApp: createHolodeckApp } = require('./services/holodeck/server');
 const { createApp: createInterceptorApp } = require('./services/interceptor/server');

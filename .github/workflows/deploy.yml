@@ -72,6 +72,6 @@ jobs:
         run: |
           gcloud run deploy global-money-${{ matrix.service }} \
             --source . \
-            --region=${{ secrets.GCP_REGION || 'us-central1' }} \
+            --region=${{ vars.GCP_REGION || 'us-central1' }} \
             --allow-unauthenticated \
-            --set-env-vars=SERVICE_TARGET=${{ matrix.service }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${{ secrets.GCP_REGION || 'us-central1' }}
+            --set-env-vars=SERVICE_TARGET=${{ matrix.service }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_REGION=${{ vars.GCP_REGION || 'us-central1' }}
