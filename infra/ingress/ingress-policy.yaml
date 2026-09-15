@@ -1,0 +1,30 @@
+version: 1
+ingress_policy:
+  controller: ingress-nginx
+  tls:
+    required: true
+    certificate_provider: cert-manager
+  security:
+    waf_enabled: true
+    security_headers:
+      - strict-transport-security
+      - x-content-type-options
+      - x-frame-options
+    rate_limit:
+      requests_per_second: 20
+      burst: 40
+  routing:
+    default_backend: service-unavailable
+    host_rules:
+      - host: app.example.com
+        paths:
+          - /
+      - host: api.example.com
+        paths:
+          - /v1
+  health_checks:
+    liveness_path: /health/live
+    readiness_path: /health/ready
+  rollout:
+    strategy: canary
+    rollback_supported: true

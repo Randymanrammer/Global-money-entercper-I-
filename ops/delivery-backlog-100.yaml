@@ -1,0 +1,232 @@
+version: 1
+total_items: 100
+tracks:
+  - name: product_scope_and_acceptance
+    items:
+      - id: PS-01
+        task: Define product outcomes and non-goals
+      - id: PS-02
+        task: Define client personas and support tiers
+      - id: PS-03
+        task: Build acceptance criteria matrix per capability
+      - id: PS-04
+        task: Define contractual SLA expectations
+      - id: PS-05
+        task: Define critical user journeys
+      - id: PS-06
+        task: Define release entry and exit criteria
+      - id: PS-07
+        task: Define legal and compliance constraints
+      - id: PS-08
+        task: Define service ownership and approvers
+      - id: PS-09
+        task: Define feature flag strategy
+      - id: PS-10
+        task: Define launch signoff workflow
+
+  - name: data_bigquery_pipeline
+    items:
+      - id: BQ-01
+        task: Create dataset and table naming standards
+      - id: BQ-02
+        task: Create v1 transaction schema with partitioning
+      - id: BQ-03
+        task: Add clustering policy and review cadence
+      - id: BQ-04
+        task: Define schema versioning lifecycle
+      - id: BQ-05
+        task: Define ingestion retry and dead-letter handling
+      - id: BQ-06
+        task: Add freshness and completeness checks
+      - id: BQ-07
+        task: Add uniqueness and null-rate checks
+      - id: BQ-08
+        task: Define IAM least-privilege model
+      - id: BQ-09
+        task: Define budget alerts and quota limits
+      - id: BQ-10
+        task: Define backfill and replay runbook
+
+  - name: dns_domain_and_certificates
+    items:
+      - id: DNS-01
+        task: Register production and staging domains
+      - id: DNS-02
+        task: Define DNS zone and record ownership
+      - id: DNS-03
+        task: Create low TTL cutover policy
+      - id: DNS-04
+        task: Define automated certificate issuance
+      - id: DNS-05
+        task: Define certificate rotation checks
+      - id: DNS-06
+        task: Define DNS change approval workflow
+      - id: DNS-07
+        task: Define multi-region failover records
+      - id: DNS-08
+        task: Add DNS monitoring and alerts
+      - id: DNS-09
+        task: Add DDoS and abuse contact records
+      - id: DNS-10
+        task: Test rollback via TTL and record revert
+
+  - name: ingress_network_security_controls
+    items:
+      - id: IN-01
+        task: Define ingress controller baseline
+      - id: IN-02
+        task: Enforce HTTPS-only routing
+      - id: IN-03
+        task: Enforce WAF baseline rules
+      - id: IN-04
+        task: Add IP and request rate limits
+      - id: IN-05
+        task: Define path and host routing policy
+      - id: IN-06
+        task: Define authn/authz middleware contracts
+      - id: IN-07
+        task: Add liveness and readiness probe policy
+      - id: IN-08
+        task: Define security headers policy
+      - id: IN-09
+        task: Define rollout and rollback traffic weights
+      - id: IN-10
+        task: Validate ingress with synthetic checks
+
+  - name: cicd_and_release_safety
+    items:
+      - id: CI-01
+        task: Define required CI checks per PR
+      - id: CI-02
+        task: Pin workflow action versions
+      - id: CI-03
+        task: Enforce branch protections on main
+      - id: CI-04
+        task: Require deployment approvals per environment
+      - id: CI-05
+        task: Add build artifact retention policy
+      - id: CI-06
+        task: Define rollback job and trigger process
+      - id: CI-07
+        task: Add release checklist gate in pipeline
+      - id: CI-08
+        task: Enforce secret scanning in changed files
+      - id: CI-09
+        task: Add dependency vulnerability checks
+      - id: CI-10
+        task: Add release provenance and audit trail
+
+  - name: observability_and_incident_response
+    items:
+      - id: OB-01
+        task: Define structured logging schema
+      - id: OB-02
+        task: Define golden metrics dashboard
+      - id: OB-03
+        task: Define alert severities and routing
+      - id: OB-04
+        task: Create P1/P2 incident runbooks
+      - id: OB-05
+        task: Define on-call rotation and handoff process
+      - id: OB-06
+        task: Create status page update protocol
+      - id: OB-07
+        task: Define post-incident review template
+      - id: OB-08
+        task: Add synthetic uptime checks
+      - id: OB-09
+        task: Define paging noise reduction policy
+      - id: OB-10
+        task: Define incident communication templates
+
+  - name: performance_and_cost_optimization
+    items:
+      - id: PC-01
+        task: Define latency and throughput SLOs
+      - id: PC-02
+        task: Define capacity planning model
+      - id: PC-03
+        task: Define autoscaling policy and limits
+      - id: PC-04
+        task: Define query cost controls and guardrails
+      - id: PC-05
+        task: Define cache and CDN strategy
+      - id: PC-06
+        task: Define performance test scenarios
+      - id: PC-07
+        task: Define baseline and regression budgets
+      - id: PC-08
+        task: Define storage lifecycle cost controls
+      - id: PC-09
+        task: Define monthly cost review cadence
+      - id: PC-10
+        task: Define optimization approval workflow
+
+  - name: reliability_and_disaster_recovery
+    items:
+      - id: DR-01
+        task: Define backup schedule and retention policy
+      - id: DR-02
+        task: Define restore validation cadence
+      - id: DR-03
+        task: Define RTO and RPO targets
+      - id: DR-04
+        task: Define regional failover strategy
+      - id: DR-05
+        task: Define dependency outage handling strategy
+      - id: DR-06
+        task: Define chaos and failure injection tests
+      - id: DR-07
+        task: Define rollback-to-known-good workflow
+      - id: DR-08
+        task: Define emergency access controls
+      - id: DR-09
+        task: Define DR tabletop exercise cadence
+      - id: DR-10
+        task: Define failover rehearsal success criteria
+
+  - name: client_support_and_business_operations
+    items:
+      - id: CS-01
+        task: Define support coverage by tier and timezone
+      - id: CS-02
+        task: Define first-response and resolution SLAs
+      - id: CS-03
+        task: Define ticket triage categorization model
+      - id: CS-04
+        task: Define escalation matrix and ownership
+      - id: CS-05
+        task: Define customer communication cadence
+      - id: CS-06
+        task: Define onboarding and handoff process
+      - id: CS-07
+        task: Define known-issues and FAQ lifecycle
+      - id: CS-08
+        task: Define client success reporting cadence
+      - id: CS-09
+        task: Define support quality scorecard
+      - id: CS-10
+        task: Define high-touch incident protocol
+
+  - name: governance_compliance_and_documentation
+    items:
+      - id: GC-01
+        task: Define policy ownership and review cadence
+      - id: GC-02
+        task: Define access review and least privilege checks
+      - id: GC-03
+        task: Define data retention and deletion controls
+      - id: GC-04
+        task: Define audit evidence collection process
+      - id: GC-05
+        task: Define secure change management policy
+      - id: GC-06
+        task: Define dependency and license governance
+      - id: GC-07
+        task: Define documentation quality standards
+      - id: GC-08
+        task: Define runbook review and simulation cadence
+      - id: GC-09
+        task: Define privacy request handling process
+      - id: GC-10
+        task: Define annual governance recertification

@@ -4,26 +4,32 @@ A starter repository for building and deploying a web application with GitHub Ac
 
 ## Repository status
 
-This repository is currently in a foundation stage. Core application code is not yet included, so this project currently focuses on:
+This repository now includes a concrete implementation baseline for:
 
-- secure repository setup
-- reproducible issue reporting
-- deployment workflow hardening
-- documentation quality
+- target architecture definitions
+- BigQuery, DNS, and ingress policy artifacts
+- phased delivery execution controls
+- 100-item delivery backlog
+- client support and quality-gate readiness
 
-## Current structure
+## Core implementation artifacts
 
-- `/README.md` — project overview and contribution guidance
-- `/SECURITY.md` — security reporting and support policy
-- `/.github/workflows/azure-webapps-node.yml` — CI/CD workflow template
-- `/.github/ISSUE_TEMPLATE/custom.md` — issue reporting template
+- `/architecture/target-architecture.yaml`
+- `/ops/delivery-backlog-100.yaml`
+- `/ops/phased-execution.yaml`
+- `/ops/first-10-high-impact-items.yaml`
+- `/ops/quality-gate.yaml`
+- `/infra/bigquery/schema/v1_transaction_events.sql`
+- `/infra/bigquery/ingestion-policy.yaml`
+- `/infra/dns/dns-zones.example.yaml`
+- `/infra/ingress/ingress-policy.yaml`
+- `/support/client-support-model.yaml`
 
-## Getting started
+## Existing repository controls
 
-1. Clone the repository.
-2. Create a feature branch.
-3. Add or update project files.
-4. Open a pull request with a clear summary of changes.
+- `/SECURITY.md` — vulnerability reporting policy
+- `/.github/ISSUE_TEMPLATE/custom.md` — structured issue intake
+- `/.github/workflows/azure-webapps-node.yml` — CI/CD workflow with safe defaults
 
 ## Azure deployment workflow setup
 
@@ -34,18 +40,8 @@ To enable deployment from GitHub Actions:
 3. Add repository variable `AZURE_WEBAPP_NAME` with your Azure Web App name.
 4. (Optional) Add repository variable `AZURE_WEBAPP_PACKAGE_PATH` if your deploy path is not repository root.
 
-The workflow is designed to skip Node build/test steps if no `package.json` exists.
+The workflow skips Node build/test automatically if no `package.json` exists.
 
-## Contribution expectations
+## Next execution step
 
-- Keep changes focused and small.
-- Include reproduction steps for bug fixes.
-- Prefer secure defaults and least-privilege workflow changes.
-- Update documentation when behavior or process changes.
-
-## Next priorities
-
-- add application source code and tests
-- define coding standards and branching conventions
-- add environment-specific deployment protections
-- add automated quality gates as code is introduced
+Start applying backlog items in priority order, promoting validated controls from `dev` to `stage` to `prod` with evidence for each phase exit criterion.

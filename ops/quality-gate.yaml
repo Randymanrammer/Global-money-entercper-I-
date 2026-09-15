@@ -1,0 +1,17 @@
+version: 1
+quality_gate:
+  target_score: 10
+  blocking_conditions:
+    - no_critical_security_findings
+    - ci_status_green
+    - documented_runbooks_present
+    - defined_slos_and_slas
+    - successful_failover_test
+    - successful_release_rehearsal
+  evidence:
+    - security_scan_report
+    - ci_run_url
+    - runbook_index
+    - slo_dashboard_link
+    - failover_test_report
+    - release_rehearsal_report

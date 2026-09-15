@@ -1,0 +1,84 @@
+version: 1
+service_name: global-money-entercper
+objective: deliver a production-ready data and client platform with strong reliability and support
+
+environments:
+  - name: dev
+    purpose: feature integration and fast feedback
+    release_gate: pull request approval and CI pass
+  - name: stage
+    purpose: pre-production validation and release rehearsal
+    release_gate: SLO and regression checks pass
+  - name: prod
+    purpose: customer traffic and contractual SLA targets
+    release_gate: stage signoff plus rollback readiness
+
+bigquery:
+  project_pattern: gme-<environment>
+  datasets:
+    - name: core_transactions
+      retention_days: 2555
+      tables:
+        - name: transaction_events
+          partition_by: DATE(event_timestamp)
+          cluster_by: [tenant_id, event_type, region]
+        - name: customer_balances
+          partition_by: DATE(snapshot_timestamp)
+          cluster_by: [tenant_id, account_id]
+  ingestion_paths:
+    - source: api_events
+      transport: pubsub_to_dataflow
+      destination: core_transactions.transaction_events
+      retry_policy: exponential_backoff_max_6_attempts
+    - source: nightly_reconciliation
+      transport: cloud_storage_batch_load
+      destination: core_transactions.customer_balances
+      retry_policy: dead_letter_then_reprocess
+  governance:
+    schema_versioning: semantic_versions_with_backward_compatible_additions
+    data_quality: freshness_completeness_uniqueness_checks_per_load
+    access_control: least_privilege_service_accounts_and_reader_roles
+    cost_controls: budget_alerts_query_quotas_partition_enforcement
+
+dns:
+  provider: cloud_dns
+  zones:
+    - name: gme-public
+      domain: example.com
+      records:
+        - type: A
+          name: app.example.com
+          target: ingress_public_ip
+        - type: CNAME
+          name: api.example.com
+          target: app.example.com
+        - type: TXT
+          name: _acme-challenge.api.example.com
+          target: managed_by_cert_automation
+  ttl_seconds:
+    default: 300
+    cutover: 60
+
+ingress:
+  platform: kubernetes_ingress_nginx
+  requirements:
+    tls: cert_manager_managed
+    waf: enabled
+    rate_limiting: requests_per_ip_policy_enabled
+    health_probes: readiness_liveness_and_dependency_checks
+    rollback: staged_weighted_routing_with_fast_revert
+
+success_metrics:
+  reliability:
+    availability_slo: 99.9
+    p1_mtta_minutes: 15
+    p1_mttr_minutes: 60
+  data_quality:
+    daily_freshness_sla_minutes: 30
+    data_quality_failure_rate_max_percent: 1
+  delivery:
+    deployment_success_rate_percent: 98
+    change_failure_rate_percent: 10
+  support:
+    first_response_sla_minutes: 30
+    customer_satisfaction_target: 4.5

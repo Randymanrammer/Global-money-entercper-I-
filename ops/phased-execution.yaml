@@ -1,0 +1,41 @@
+version: 1
+phases:
+  - name: phase_a_foundation
+    focus: repo standards, infra baseline, security guardrails
+    deliverables:
+      - architecture baseline approved
+      - backlog and ownership published
+      - workflow and security controls enabled
+    exit_criteria:
+      - no blocking gaps in access control and CI
+      - baseline docs and templates in repository
+
+  - name: phase_b_data_api_ingress_integration
+    focus: data ingestion, API contracts, ingress routing
+    deliverables:
+      - bigquery ingestion path implemented
+      - DNS and TLS automation validated
+      - ingress policy and health probes active
+    exit_criteria:
+      - successful end-to-end data flow and API path tests
+      - rollback path tested in stage
+
+  - name: phase_c_production_hardening
+    focus: SLOs, alerting, backups, runbooks
+    deliverables:
+      - SLO dashboards and alert routing
+      - backup and restore evidence
+      - incident and recovery runbooks
+    exit_criteria:
+      - failover and restore rehearsal pass
+      - no critical unresolved security findings
+
+  - name: phase_d_launch_readiness
+    focus: support playbooks, release rehearsal, stakeholder signoff
+    deliverables:
+      - support model staffed and documented
+      - release rehearsal complete
+      - final go/no-go signoff complete
+    exit_criteria:
+      - CI green and release checklist complete
+      - customer communication and rollback plans approved

@@ -1,0 +1,42 @@
+version: 1
+items:
+  - id: HI-01
+    task: Create target architecture specification
+    status: implemented
+    artifact: architecture/target-architecture.yaml
+  - id: HI-02
+    task: Create full 100-item delivery backlog in 10 tracks
+    status: implemented
+    artifact: ops/delivery-backlog-100.yaml
+  - id: HI-03
+    task: Create phased execution specification with criteria
+    status: implemented
+    artifact: ops/phased-execution.yaml
+  - id: HI-04
+    task: Create BigQuery transaction events v1 schema
+    status: implemented
+    artifact: infra/bigquery/schema/v1_transaction_events.sql
+  - id: HI-05
+    task: Define ingestion retry and data quality policy
+    status: implemented
+    artifact: infra/bigquery/ingestion-policy.yaml
+  - id: HI-06
+    task: Define DNS zone and cutover template
+    status: implemented
+    artifact: infra/dns/dns-zones.example.yaml
+  - id: HI-07
+    task: Define ingress security and rollout policy
+    status: implemented
+    artifact: infra/ingress/ingress-policy.yaml
+  - id: HI-08
+    task: Define client support and escalation model
+    status: implemented
+    artifact: support/client-support-model.yaml
+  - id: HI-09
+    task: Define launch quality gate and evidence requirements
+    status: implemented
+    artifact: ops/quality-gate.yaml
+  - id: HI-10
+    task: Link implementation artifacts in repository README
+    status: implemented
+    artifact: README.md

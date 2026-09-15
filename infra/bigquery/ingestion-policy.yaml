@@ -1,0 +1,30 @@
+version: 1
+ingestion_policy:
+  streams:
+    - name: api_events_stream
+      source: pubsub
+      sink: bigquery.core_transactions.transaction_events
+      retry:
+        mode: exponential_backoff
+        max_attempts: 6
+        initial_seconds: 5
+        max_seconds: 300
+      dead_letter:
+        enabled: true
+        topic: api-events-dlq
+    - name: reconciliation_batch
+      source: cloud_storage
+      sink: bigquery.core_transactions.customer_balances
+      retry:
+        mode: bounded_retries
+        max_attempts: 3
+      dead_letter:
+        enabled: true
+        location: gs://gme-reconciliation-dlq
+  data_quality:
+    freshness_sla_minutes: 30
+    required_checks:
+      - completeness
+      - uniqueness
+      - schema_compatibility
+      - null_rate_threshold
