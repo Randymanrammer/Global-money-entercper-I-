@@ -43,7 +43,7 @@ jobs:
           path: .
 
   deploy:
-    if: ${{ github.ref == 'refs/heads/main' && vars.AZURE_WEBAPP_NAME != '' && secrets.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: build
     runs-on: ubuntu-latest
 
@@ -60,10 +60,29 @@ jobs:
         with:
           name: node-app
 
+      - name: Check deploy configuration
+        id: deploy-config
+        env:
+          AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: |
+          if [ -n "$AZURE_WEBAPP_NAME" ] && [ -n "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Missing Azure deploy config. Set AZURE_WEBAPP_NAME (repository variable) and AZURE_WEBAPP_PUBLISH_PROFILE (repository secret)."
+          fi
+
       - name: Deploy to Azure WebApp
         id: deploy-to-webapp
+        if: ${{ steps.deploy-config.outputs.ready == 'true' }}
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ${{ vars.AZURE_WEBAPP_PACKAGE_PATH || env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Output published URL
+        if: ${{ steps.deploy-config.outputs.ready == 'true' && steps.deploy-to-webapp.outputs.webapp-url != '' }}
+        run: |
+          echo "Published URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
