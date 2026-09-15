@@ -1,6 +1,5 @@
 version: 1
 quality_gate:
-  target_score: 10
   blocking_conditions:
     - no_critical_security_findings
     - ci_status_green

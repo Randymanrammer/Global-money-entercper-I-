@@ -16,7 +16,7 @@ Please do **not** open public issues for suspected vulnerabilities.
 Use one of the following paths:
 
 1. Preferred: open a private GitHub Security Advisory for this repository.
-2. If Security Advisories are unavailable, open a private maintainer contact channel and include:
+2. If Security Advisories are unavailable, email maintainers privately at randymanrammer@users.noreply.github.com and include:
    - affected component
    - reproduction steps
    - impact assessment

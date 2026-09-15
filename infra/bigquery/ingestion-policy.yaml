@@ -28,3 +28,23 @@ ingestion_policy:
       - uniqueness
       - schema_compatibility
       - null_rate_threshold
+    completeness:
+      required_fields:
+        event_id: 1.0
+        tenant_id: 1.0
+        event_type: 1.0
+        event_timestamp: 1.0
+        ingestion_timestamp: 1.0
+        schema_version: 1.0
+    uniqueness:
+      key_fields:
+        - event_id
+      min_unique_ratio: 1.0
+    null_rate_threshold:
+      fields:
+        account_id: 0.1
+        amount: 0.05
+        currency: 0.02
+        region: 0.02
+        source_system: 0.02
+        trace_id: 0.15

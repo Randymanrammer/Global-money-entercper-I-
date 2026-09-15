@@ -3,6 +3,8 @@ name: Build and deploy Node app to Azure Web App
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 env:
@@ -17,27 +19,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
 
       - name: Set up Node.js
-        if: ${{ hashFiles('**/package.json') != '' }}
-        uses: actions/setup-node@v4
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
       - name: Install, build, and test
-        if: ${{ hashFiles('**/package.json') != '' }}
+        if: ${{ hashFiles('package.json') != '' }}
         run: |
           npm install
           npm run build --if-present
           npm run test --if-present
 
       - name: No Node project found
-        if: ${{ hashFiles('**/package.json') == '' }}
+        if: ${{ hashFiles('package.json') == '' }}
         run: echo "No package.json found; skipping Node build/test steps."
 
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: node-app
           path: .
@@ -76,7 +79,7 @@ jobs:
       - name: Deploy to Azure WebApp
         id: deploy-to-webapp
         if: ${{ steps.deploy-config.outputs.ready == 'true' }}
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v2.2.19
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}

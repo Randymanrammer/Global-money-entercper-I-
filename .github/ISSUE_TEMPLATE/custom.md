@@ -15,8 +15,9 @@ Provide a clear and short description of the issue.
 - [ ] Bug
 - [ ] Performance issue
 - [ ] Documentation issue
-- [ ] Security concern
 - [ ] Feature request
+
+For suspected vulnerabilities, do **not** open a public issue. Use the private reporting path in [SECURITY.md](../SECURITY.md).
 
 ## Steps to reproduce
 

@@ -4,7 +4,7 @@ phases:
     focus: repo standards, infra baseline, security guardrails
     deliverables:
       - architecture baseline approved
-      - backlog and ownership published
+      - backlog published
       - workflow and security controls enabled
     exit_criteria:
       - no blocking gaps in access control and CI

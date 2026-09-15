@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `gme-prod.core_transactions.transaction_events`
+CREATE TABLE IF NOT EXISTS `${PROJECT_ID}.core_transactions.transaction_events`
 (
   event_id STRING NOT NULL,
   tenant_id STRING NOT NULL,
@@ -14,4 +14,7 @@ CREATE TABLE IF NOT EXISTS `gme-prod.core_transactions.transaction_events`
   schema_version STRING NOT NULL
 )
 PARTITION BY DATE(event_timestamp)
-CLUSTER BY tenant_id, event_type, region;
+CLUSTER BY tenant_id, event_type, region
+OPTIONS (
+  require_partition_filter = TRUE
+);
