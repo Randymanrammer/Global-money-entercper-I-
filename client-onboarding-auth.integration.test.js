@@ -39,13 +39,21 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       createdClients.map(({ id, token }) =>
         axios.delete(`${BASE_URL}/v1/clients/${id}`, {
           headers: { Authorization: 'Bearer ' + token },
+          validateStatus: (status) => [200, 204, 404].includes(status),
         }),
       ),
     );
+    const failures = results.filter((result) => result.status === 'rejected');
+    if (failures.length > 0) {
+      const messages = failures
+        .map((result) => result.reason?.message || 'unknown cleanup error')
+        .join('; ');
+      throw new Error(`Cleanup failed for ${failures.length} client(s): ${messages}`);
+    }
   });
 
   test('Step 1: Onboard new client and verify clean payload response', async () => {
@@ -77,7 +85,7 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
 
   test('Step 4: Verify input sanitization and clean content handling', async () => {
     const dirtyPayload = {
-      organizationName: 'Clean <script>alert(1)</script> Corp ',
+      organizationName: 'Clean Corp <script>alert(1)</script> ',
       email: `test-xss-${Date.now()}@example.com`,
       role: 'client_admin',
     };
@@ -98,5 +106,6 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
     expect(res.data.organizationName).not.toContain('<script>');
     expect(res.data.organizationName).not.toContain('</script>');
     expect(res.data.organizationName).toBe(res.data.organizationName.trim());
+    expect(res.data.organizationName).toBe('Clean Corp');
   });
 });
