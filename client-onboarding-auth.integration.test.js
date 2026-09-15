@@ -1,0 +1,65 @@
+const axios = require('axios');
+
+const BASE_URL = process.env.API_BASE_URL || 'https://api.yourdomain.com';
+
+describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
+  let authToken = '';
+  let clientId = '';
+
+  const testClientPayload = {
+    organizationName: 'Clean Code Corp',
+    email: `test-${Date.now()}@example.com`,
+    role: 'client_admin',
+  };
+
+  test('Step 1: Onboard new client and verify clean payload response', async () => {
+    const res = await axios.post(`${BASE_URL}/v1/onboard`, testClientPayload, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.data).toHaveProperty('clientId');
+    expect(res.data).toHaveProperty('accessToken');
+    expect(res.data).not.toHaveProperty('dbConnectionString');
+
+    clientId = res.data.clientId;
+    authToken = res.data.accessToken;
+  });
+
+  test('Step 2: Validate token scope and authorized route access', async () => {
+    const res = await axios.get(`${BASE_URL}/v1/clients/${clientId}/status`, {
+      headers: { Authorization: 'Bearer ' + authToken },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.data.status).toBe('active');
+  });
+
+  test('Step 3: Reject unauthorized or scope-escalated actions', async () => {
+    await expect(
+      axios.delete(`${BASE_URL}/v1/admin/tenants/${clientId}`, {
+        headers: { Authorization: 'Bearer ' + authToken },
+      }),
+    ).rejects.toMatchObject({
+      response: { status: 403 },
+    });
+  });
+
+  test('Step 4: Verify input sanitization and clean content handling', async () => {
+    const dirtyPayload = {
+      organizationName: 'Clean <script>alert(1)</script> Corp ',
+      email: `test-xss-${Date.now()}@example.com`,
+      role: 'client_admin',
+    };
+
+    const res = await axios.post(`${BASE_URL}/v1/onboard`, dirtyPayload, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.data.organizationName).toBeDefined();
+    expect(res.data.organizationName).not.toContain('<script>');
+    expect(res.data.organizationName).not.toContain('</script>');
+    expect(res.data.organizationName).toBe(res.data.organizationName.trim());
+  });
+});
