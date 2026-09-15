@@ -1,32 +1,25 @@
-. V .
-. # This workflow will build and push a node.js application to an Azure Web App when a commit is pushed to your default branch.
-#
-# This workflow assumes you have already created the target Azure App Service web app.
-# For instructions see https://docs.microsoft.com/en-us/azure/app-service/quickstart-nodejs?tabs=linux&pivots=development-environment-cli
-#
-# To configure this workflow:
-#
-# 1. Download the Publish Profile for your Azure Web App. You can download this file from the Overview page of your Web App in the Azure Portal.
-#    For more information: https://docs.microsoft.com/en-us/azure/app-service/deploy-github-actions?tabs=applevel#generate-deployment-credentials
-#
-# 2. Create a secret in your repository named AZURE_WEBAPP_PUBLISH_PROFILE, paste the publish profile contents as the value of the secret.
-#    For instructions on obtaining the publish profile see: https://docs.microsoft.com/azure/app-service/deploy-github-actions#configure-the-github-secret
-#
-# 3. Change the value for the AZURE_WEBAPP_NAME. Optionally, change the AZURE_WEBAPP_PACKAGE_PATH and NODE_VERSION environment variables below.
-#
-# For more information on GitHub Actions for Azure: https://github.com/Azure/Actions
-# For more information on the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples
+name: Build and deploy Node app to Azure Web App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
+    inputs:
+      restart_deploy:
+        description: "Force a fresh deploy run for restart scenarios"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: azure-webapp-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '20.x'                # set this to the node version to use
+  AZURE_WEBAPP_NAME: your-app-name
+  AZURE_WEBAPP_PACKAGE_PATH: "."
+  NODE_VERSION: "20.x"
+  PUBLIC_HEALTHCHECK_PATH: "/"
 
 permissions:
   contents: read
@@ -34,46 +27,96 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
+      - name: Detect package.json
+        id: detect_package
+        shell: bash
+        run: |
+          if [ -f package.json ]; then
+            echo "has_package_json=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_package_json=false" >> "$GITHUB_OUTPUT"
+          fi
 
-    - name: npm install, build, and test
-      run: |
-        npm install
-        npm run build --if-present
-        npm run test --if-present
+      - name: Set up Node.js
+        if: steps.detect_package.outputs.has_package_json == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-    - name: Upload artifact for deployment job
-      uses: actions/upload-artifact@v4
-      with:
-        name: node-app
-        path: .
+      - name: Install, build, and test
+        if: steps.detect_package.outputs.has_package_json == 'true'
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+          npm run build --if-present
+          npm run test --if-present
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: .
+          retention-days: 7
 
   deploy:
     permissions:
       contents: none
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: build
     environment:
-      name: 'Development'
+      name: Development
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
     steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v4
-      with:
-        name: node-app
+      - name: Validate deployment configuration
+        id: deploy_config
+        shell: bash
+        run: |
+          if [ "${{ env.AZURE_WEBAPP_NAME }}" = "your-app-name" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AZURE_WEBAPP_NAME is still set to default placeholder."
+            exit 0
+          fi
+          if [ -z "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AZURE_WEBAPP_PUBLISH_PROFILE is not configured."
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
-    - name: 'Deploy to Azure WebApp'
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+      - name: Download artifact from build job
+        if: steps.deploy_config.outputs.ready == 'true'
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: node-app
+
+      - name: Deploy to Azure WebApp
+        if: steps.deploy_config.outputs.ready == 'true'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Verify public ingress health endpoint
+        if: steps.deploy_config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          WEBAPP_URL="${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+          if [ -z "$WEBAPP_URL" ]; then
+            echo "::error::Deploy step did not return a webapp URL."
+            exit 1
+          fi
+          HEALTH_URL="${WEBAPP_URL}${{ env.PUBLIC_HEALTHCHECK_PATH }}"
+          echo "Checking $HEALTH_URL"
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-connrefused "$HEALTH_URL" > /dev/null
