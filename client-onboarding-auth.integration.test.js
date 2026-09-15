@@ -5,6 +5,8 @@ const BASE_URL = process.env.API_BASE_URL || 'https://api.yourdomain.com';
 describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
   let authToken = '';
   let clientId = '';
+  let onboardResponse = null;
+  const createdClients = [];
 
   const testClientPayload = {
     organizationName: 'Clean Code Corp',
@@ -12,18 +14,36 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
     role: 'client_admin',
   };
 
-  test('Step 1: Onboard new client and verify clean payload response', async () => {
+  beforeAll(async () => {
     const res = await axios.post(`${BASE_URL}/v1/onboard`, testClientPayload, {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.status).toBe(201);
-    expect(res.data).toHaveProperty('clientId');
-    expect(res.data).toHaveProperty('accessToken');
-    expect(res.data).not.toHaveProperty('dbConnectionString');
-
+    onboardResponse = res;
     clientId = res.data.clientId;
     authToken = res.data.accessToken;
+    createdClients.push({
+      id: res.data.clientId,
+      token: res.data.accessToken,
+    });
+  });
+
+  afterAll(async () => {
+    await Promise.allSettled(
+      createdClients.map(({ id, token }) =>
+        axios.delete(`${BASE_URL}/v1/clients/${id}`, {
+          headers: { Authorization: 'Bearer ' + token },
+        }),
+      ),
+    );
+  });
+
+  test('Step 1: Onboard new client and verify clean payload response', async () => {
+    expect(onboardResponse).toBeTruthy();
+    expect(onboardResponse.status).toBe(201);
+    expect(onboardResponse.data).toHaveProperty('clientId');
+    expect(onboardResponse.data).toHaveProperty('accessToken');
+    expect(onboardResponse.data).not.toHaveProperty('dbConnectionString');
   });
 
   test('Step 2: Validate token scope and authorized route access', async () => {
@@ -54,6 +74,10 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
 
     const res = await axios.post(`${BASE_URL}/v1/onboard`, dirtyPayload, {
       headers: { 'Content-Type': 'application/json' },
+    });
+    createdClients.push({
+      id: res.data.clientId,
+      token: res.data.accessToken,
     });
 
     expect(res.status).toBe(201);
