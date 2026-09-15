@@ -19,6 +19,13 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
+    if (!res || res.status !== 201) {
+      throw new Error('beforeAll onboarding failed: expected HTTP 201 response');
+    }
+    if (!res.data || !res.data.clientId || !res.data.accessToken) {
+      throw new Error('beforeAll onboarding failed: missing clientId/accessToken in response');
+    }
+
     onboardResponse = res;
     clientId = res.data.clientId;
     authToken = res.data.accessToken;
