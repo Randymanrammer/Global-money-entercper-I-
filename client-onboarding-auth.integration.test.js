@@ -1,6 +1,9 @@
 const axios = require('axios');
 
-const BASE_URL = process.env.API_BASE_URL || 'https://api.yourdomain.com';
+const BASE_URL = process.env.API_BASE_URL;
+if (!BASE_URL) {
+  throw new Error('API_BASE_URL is required for integration tests');
+}
 
 describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
   let authToken = '';
@@ -82,13 +85,16 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
     const res = await axios.post(`${BASE_URL}/v1/onboard`, dirtyPayload, {
       headers: { 'Content-Type': 'application/json' },
     });
+    expect(res.status).toBe(201);
+    expect(res.data).toHaveProperty('clientId');
+    expect(res.data).toHaveProperty('accessToken');
+    expect(res.data).toHaveProperty('organizationName');
+
     createdClients.push({
       id: res.data.clientId,
       token: res.data.accessToken,
     });
 
-    expect(res.status).toBe(201);
-    expect(res.data.organizationName).toBeDefined();
     expect(res.data.organizationName).not.toContain('<script>');
     expect(res.data.organizationName).not.toContain('</script>');
     expect(res.data.organizationName).toBe(res.data.organizationName.trim());
