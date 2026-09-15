@@ -65,7 +65,7 @@ describe('Client Onboarding & Auth Lifecycle Integration Tests', () => {
     expect(res.data.status).toBe('active');
   });
 
-  test('Step 3: Reject unauthorized or scope-escalated actions', async () => {
+  test('Step 3: Reject scope-escalated admin action with 403 forbidden', async () => {
     await expect(
       axios.delete(`${BASE_URL}/v1/admin/tenants/${clientId}`, {
         headers: { Authorization: 'Bearer ' + authToken },
