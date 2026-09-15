@@ -1,0 +1,32 @@
+version: 1
+support_model:
+  tiers:
+    - tier: standard
+      first_response_minutes: 120
+      target_resolution_hours: 24
+    - tier: premium
+      first_response_minutes: 30
+      target_resolution_hours: 8
+  workflow:
+    ticket_states:
+      - new
+      - triaged
+      - in_progress
+      - waiting_on_customer
+      - resolved
+    escalation_matrix:
+      p1: incident_commander
+      p2: engineering_manager
+      p3: support_lead
+  communications:
+    status_page_required_for:
+      - p1
+      - p2
+    customer_updates_minutes:
+      p1: 30
+      p2: 120
+  onboarding:
+    required_artifacts:
+      - support_contact_sheet
+      - runbook_links
+      - escalation_matrix

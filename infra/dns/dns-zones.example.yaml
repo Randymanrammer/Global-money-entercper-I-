@@ -1,0 +1,22 @@
+version: 1
+dns:
+  provider: cloud_dns
+  zones:
+    - name: gme-public
+      domain: example.com
+      records:
+        - name: app.example.com
+          type: A
+          ttl: 300
+          value: 203.0.113.10
+        - name: api.example.com
+          type: CNAME
+          ttl: 300
+          value: app.example.com.
+        - name: _acme-challenge.api.example.com
+          type: TXT
+          ttl: 60
+          value: managed-by-cert-automation
+  change_control:
+    require_approval: true
+    emergency_ttl_seconds: 60
