@@ -2,20 +2,22 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Security fixes are provided for the latest code on the default branch.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| main    | :white_check_mark: |
+| legacy  | :x:                |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you find a vulnerability, open a private security advisory in GitHub Security Advisories for this repository.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Please include:
+
+- Affected component or file path
+- Clear reproduction steps
+- Potential impact
+- Suggested mitigation (if available)
+
+You can expect an acknowledgement within 3 business days. Confirmed issues will be prioritized for remediation and coordinated disclosure.
