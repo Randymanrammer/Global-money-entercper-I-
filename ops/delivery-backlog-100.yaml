@@ -1,0 +1,223 @@
+version: 1
+title: "100-point improvement backlog"
+tracks:
+  - name: reliability
+    items:
+      - id: 1
+        title: "Add readiness probe for web process"
+      - id: 2
+        title: "Add liveness probe for web process"
+      - id: 3
+        title: "Add graceful shutdown timeout budget"
+      - id: 4
+        title: "Add startup timeout guardrails"
+      - id: 5
+        title: "Add dead-letter handling for failed jobs"
+      - id: 6
+        title: "Implement retry policy with jitter"
+      - id: 7
+        title: "Implement idempotency keys for webhooks"
+      - id: 8
+        title: "Add circuit breaker for external APIs"
+      - id: 9
+        title: "Add bulkhead isolation for queue workers"
+      - id: 10
+        title: "Run chaos test for process restarts"
+  - name: observability
+    items:
+      - id: 11
+        title: "Define SLOs for availability"
+      - id: 12
+        title: "Define SLOs for latency"
+      - id: 13
+        title: "Define error-budget burn alerts"
+      - id: 14
+        title: "Add request correlation IDs"
+      - id: 15
+        title: "Add structured JSON logs"
+      - id: 16
+        title: "Add dashboard for ingress latency"
+      - id: 17
+        title: "Add dashboard for deployment health"
+      - id: 18
+        title: "Add dashboard for restart counts"
+      - id: 19
+        title: "Enable distributed tracing end-to-end"
+      - id: 20
+        title: "Add synthetic uptime checks"
+  - name: security
+    items:
+      - id: 21
+        title: "Rotate deployment credentials"
+      - id: 22
+        title: "Move secrets to managed vault"
+      - id: 23
+        title: "Enforce least-privilege workflow permissions"
+      - id: 24
+        title: "Enable dependency vulnerability gates"
+      - id: 25
+        title: "Enable secret scanning in CI"
+      - id: 26
+        title: "Pin all GitHub Actions to secure versions"
+      - id: 27
+        title: "Enable branch protection with required checks"
+      - id: 28
+        title: "Add signed artifact provenance"
+      - id: 29
+        title: "Add outbound egress allow-list"
+      - id: 30
+        title: "Add webhook signature verification tests"
+  - name: ci-cd
+    items:
+      - id: 31
+        title: "Add workflow concurrency controls"
+      - id: 32
+        title: "Add workflow timeout defaults"
+      - id: 33
+        title: "Add conditional Node build when package exists"
+      - id: 34
+        title: "Use npm ci when lockfile is present"
+      - id: 35
+        title: "Add artifact retention policy"
+      - id: 36
+        title: "Add deploy preflight validation step"
+      - id: 37
+        title: "Add post-deploy ingress health check"
+      - id: 38
+        title: "Add rollback path on failed health check"
+      - id: 39
+        title: "Add manual promotion gate for production"
+      - id: 40
+        title: "Add deploy notifications to chatops"
+  - name: performance
+    items:
+      - id: 41
+        title: "Set latency budgets per endpoint"
+      - id: 42
+        title: "Add response compression policy"
+      - id: 43
+        title: "Tune keep-alive and connection pooling"
+      - id: 44
+        title: "Enable CDN caching policy"
+      - id: 45
+        title: "Define cache invalidation strategy"
+      - id: 46
+        title: "Profile memory under peak load"
+      - id: 47
+        title: "Profile CPU under peak load"
+      - id: 48
+        title: "Add background job throughput tests"
+      - id: 49
+        title: "Add autoscale trigger tuning"
+      - id: 50
+        title: "Add p95/p99 latency regression guard"
+  - name: data-and-state
+    items:
+      - id: 51
+        title: "Define backup policy and retention"
+      - id: 52
+        title: "Run restore drills quarterly"
+      - id: 53
+        title: "Define RPO/RTO targets"
+      - id: 54
+        title: "Add migration rollback strategy"
+      - id: 55
+        title: "Add schema drift detection"
+      - id: 56
+        title: "Add data integrity checksum jobs"
+      - id: 57
+        title: "Add archival lifecycle for cold data"
+      - id: 58
+        title: "Define PII minimization policy"
+      - id: 59
+        title: "Add encryption at rest verification"
+      - id: 60
+        title: "Add encryption in transit verification"
+  - name: public-ingress
+    items:
+      - id: 61
+        title: "Define ingress path contract"
+      - id: 62
+        title: "Add rate limiting by client identity"
+      - id: 63
+        title: "Add WAF rules for common attacks"
+      - id: 64
+        title: "Add DDoS mitigation baseline"
+      - id: 65
+        title: "Add TLS policy enforcement"
+      - id: 66
+        title: "Add HSTS and security headers"
+      - id: 67
+        title: "Add CORS policy validation"
+      - id: 68
+        title: "Add ingress canary smoke checks"
+      - id: 69
+        title: "Add geolocation traffic controls"
+      - id: 70
+        title: "Add fail-open/fail-closed policy decision"
+  - name: restart-and-recovery
+    items:
+      - id: 71
+        title: "Define automated restart policy thresholds"
+      - id: 72
+        title: "Track restart reason and frequency"
+      - id: 73
+        title: "Add warm-up routine after restart"
+      - id: 74
+        title: "Add restart-safe in-flight request handling"
+      - id: 75
+        title: "Add process supervisor backoff policy"
+      - id: 76
+        title: "Add persistence checks after restart"
+      - id: 77
+        title: "Add failover runbook for crash loops"
+      - id: 78
+        title: "Test restart during active deployment"
+      - id: 79
+        title: "Test restart during peak traffic"
+      - id: 80
+        title: "Add automatic rollback after repeated restarts"
+  - name: product-and-ops
+    items:
+      - id: 81
+        title: "Create on-call escalation matrix"
+      - id: 82
+        title: "Create incident severity model"
+      - id: 83
+        title: "Create postmortem template"
+      - id: 84
+        title: "Run quarterly game days"
+      - id: 85
+        title: "Define release train cadence"
+      - id: 86
+        title: "Define feature flag lifecycle"
+      - id: 87
+        title: "Define deprecation communication process"
+      - id: 88
+        title: "Add stakeholder status reporting rhythm"
+      - id: 89
+        title: "Add runbook coverage audit"
+      - id: 90
+        title: "Add ownership map by service area"
+  - name: internet-publish-and-scale
+    items:
+      - id: 91
+        title: "Document publish pipeline end-to-end"
+      - id: 92
+        title: "Add domain and DNS cutover checklist"
+      - id: 93
+        title: "Add certificate renewal monitoring"
+      - id: 94
+        title: "Add multi-region deployment strategy"
+      - id: 95
+        title: "Add traffic splitting for progressive delivery"
+      - id: 96
+        title: "Add blue/green deployment option"
+      - id: 97
+        title: "Add disaster recovery region validation"
+      - id: 98
+        title: "Add external dependency SLA tracking"
+      - id: 99
+        title: "Add internet egress cost observability"
+      - id: 100
+        title: "Add global latency monitoring for public endpoints"
