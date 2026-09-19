@@ -1,4 +1,4 @@
-name: Build and deploy Node app to Azure Web App
+name: CI and Deploy (Platform Agnostic)
 
 on:
   push:
@@ -6,23 +6,22 @@ on:
   workflow_dispatch:
     inputs:
       restart_deploy:
-        description: "Force a fresh deploy run for restart scenarios"
+        description: "Force a fresh deploy trigger for restart scenarios"
         required: false
         type: boolean
         default: false
 
 concurrency:
-  group: azure-webapp-${{ github.ref }}
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  AZURE_WEBAPP_NAME: your-app-name
-  AZURE_WEBAPP_PACKAGE_PATH: "."
-  NODE_VERSION: "20.x"
-  PUBLIC_HEALTHCHECK_PATH: "/"
 
 permissions:
   contents: read
+  packages: write
+
+env:
+  NODE_VERSION: "20.x"
+  PUBLIC_HEALTHCHECK_URL: ""
 
 jobs:
   build:
@@ -60,63 +59,49 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
-      - name: Upload artifact for deployment job
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
+          name: app-source
           path: .
           retention-days: 7
 
   deploy:
-    permissions:
-      contents: none
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
-    environment:
-      name: Development
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      contents: none
     steps:
-      - name: Validate deployment configuration
+      - name: Validate deploy webhook secret
         id: deploy_config
         shell: bash
         run: |
-          if [ "${{ env.AZURE_WEBAPP_NAME }}" = "your-app-name" ]; then
+          if [ -z "${{ secrets.DEPLOY_WEBHOOK_URL }}" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::AZURE_WEBAPP_NAME is still set to default placeholder."
-            exit 0
-          fi
-          if [ -z "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}" ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::AZURE_WEBAPP_PUBLISH_PROFILE is not configured."
+            echo "::warning::DEPLOY_WEBHOOK_URL is not configured. Skipping deploy trigger."
             exit 0
           fi
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
-      - name: Download artifact from build job
+      - name: Download build artifact
         if: steps.deploy_config.outputs.ready == 'true'
         uses: actions/download-artifact@v4.1.3
         with:
-          name: node-app
+          name: app-source
 
-      - name: Deploy to Azure WebApp
-        if: steps.deploy_config.outputs.ready == 'true'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-
-      - name: Verify public ingress health endpoint
+      - name: Trigger deployment webhook
         if: steps.deploy_config.outputs.ready == 'true'
         shell: bash
         run: |
-          WEBAPP_URL="${{ steps.deploy-to-webapp.outputs.webapp-url }}"
-          if [ -z "$WEBAPP_URL" ]; then
-            echo "::error::Deploy step did not return a webapp URL."
-            exit 1
-          fi
-          HEALTH_URL="${WEBAPP_URL}${{ env.PUBLIC_HEALTHCHECK_PATH }}"
-          echo "Checking $HEALTH_URL"
-          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-connrefused "$HEALTH_URL" > /dev/null
+          curl --fail --silent --show-error \
+            --retry 5 --retry-delay 5 --retry-connrefused \
+            -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}"
+
+      - name: Verify public ingress health endpoint
+        if: steps.deploy_config.outputs.ready == 'true' && env.PUBLIC_HEALTHCHECK_URL != ''
+        shell: bash
+        run: |
+          curl --fail --silent --show-error \
+            --retry 6 --retry-delay 10 --retry-connrefused \
+            "${{ env.PUBLIC_HEALTHCHECK_URL }}" > /dev/null
