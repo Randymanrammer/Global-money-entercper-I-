@@ -8,24 +8,27 @@ APPROVAL_TOKEN="${APPROVAL_TOKEN:-}"
 ADMIN_MERGE="${ADMIN_MERGE:-false}"
 
 if [[ -n "$PR_NUMBER" ]]; then
-  PR_NUMBERS="$PR_NUMBER"
+  PR_LIST="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json number,isDraft --jq '.')"
 else
   echo "Fetching open pull requests for $REPO..."
-  PR_NUMBERS="$(gh pr list --repo "$REPO" --json number --jq '.[].number')"
+  PR_LIST="$(gh pr list --repo "$REPO" --json number,isDraft --jq '.[]')"
 fi
 
-if [[ -z "$PR_NUMBERS" ]]; then
+if [[ -z "$PR_LIST" ]]; then
   echo "No open pull requests found."
   exit 0
 fi
 
-for PR in $PR_NUMBERS; do
+echo "$PR_LIST" | jq -c '.' | while read -r pr; do
+  PR="$(echo "$pr" | jq -r '.number')"
+  IS_DRAFT="$(echo "$pr" | jq -r '.isDraft')"
+
   echo "----------------------------------------"
   echo "Processing PR #${PR}..."
 
-  IS_DRAFT="$(gh pr view "$PR" --repo "$REPO" --json isDraft --jq '.isDraft')"
   if [[ "$IS_DRAFT" == "true" ]]; then
-    gh pr ready "$PR" --repo "$REPO"
+    echo "Marking PR #${PR} as ready for review..."
+    gh pr ready "$PR" --repo "$REPO" || true
   fi
 
   if [[ "$APPROVE_PR" == "true" && -n "$APPROVAL_TOKEN" ]]; then
@@ -59,12 +62,14 @@ for PR in $PR_NUMBERS; do
     continue
   fi
 
+  echo "Merging PR #${PR}..."
   MERGE_ARGS=(--merge --delete-branch)
   if [[ "$ADMIN_MERGE" == "true" ]]; then
     MERGE_ARGS+=(--admin)
   fi
 
-  gh pr merge "$PR" --repo "$REPO" "${MERGE_ARGS[@]}"
+  gh pr merge "$PR" --repo "$REPO" "${MERGE_ARGS[@]}" || \
+    gh pr merge "$PR" --repo "$REPO" --auto --merge --delete-branch
 
-  echo "PR #${PR} merged and branch deleted successfully!"
+  echo "PR #${PR} successfully processed!"
 done
