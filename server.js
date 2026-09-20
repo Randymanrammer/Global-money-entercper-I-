@@ -22,7 +22,8 @@ app.use((req, res, next) => {
   if (BASE_DOMAIN && hostname.endsWith(`.${BASE_DOMAIN}`)) {
     const suffixLength = BASE_DOMAIN.length + 1;
     const candidate = hostname.slice(0, -suffixLength);
-    req.subdomain = candidate || null;
+    const labels = candidate.split('.').filter(Boolean);
+    req.subdomain = labels.length ? labels[labels.length - 1] : null;
     return next();
   }
 
@@ -31,7 +32,7 @@ app.use((req, res, next) => {
   }
 
   if (!BASE_DOMAIN && parts.length > 2 && hostname !== 'localhost') {
-    req.subdomain = parts.slice(0, -2).join('.') || null;
+    req.subdomain = parts[0];
   }
 
   next();
