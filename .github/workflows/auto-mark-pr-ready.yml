@@ -26,13 +26,18 @@ jobs:
             REVIEW_DECISION="$(gh pr view "$PR_URL" --json reviewDecision --jq '.reviewDecision // \"\"')"
             MERGEABLE_STATE="$(gh pr view "$PR_URL" --json mergeable --jq '.mergeable // \"\"')"
             MERGE_STATE_STATUS="$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus // \"\"')"
-            if [[ "$REVIEW_DECISION" != "REVIEW_REQUIRED" && "$MERGEABLE_STATE" == "MERGEABLE" && ! "$MERGE_STATE_STATUS" =~ ^(BEHIND|BLOCKED|DIRTY|DRAFT|UNKNOWN)$ ]]; then
+            if [[ ! "$REVIEW_DECISION" =~ ^(REVIEW_REQUIRED|CHANGES_REQUESTED)$ && "$MERGEABLE_STATE" == "MERGEABLE" && ! "$MERGE_STATE_STATUS" =~ ^(BEHIND|BLOCKED|DIRTY|DRAFT|UNKNOWN)$ ]]; then
               break
             fi
             if [[ "$attempt" -lt 5 ]]; then
               sleep 2
             fi
           done
+
+          if [[ "$REVIEW_DECISION" == "CHANGES_REQUESTED" ]]; then
+            echo "Skipping merge because changes are still requested on the PR."
+            exit 0
+          fi
 
           if [[ -z "$APPROVAL_TOKEN" && "$REVIEW_DECISION" == "REVIEW_REQUIRED" ]]; then
             echo "Skipping merge because approval is still required and PR_AUTOMATION_TOKEN is not configured."
