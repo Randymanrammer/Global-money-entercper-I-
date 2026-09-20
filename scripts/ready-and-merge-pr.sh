@@ -32,9 +32,18 @@ for PR in $PR_NUMBERS; do
     GH_TOKEN="$APPROVAL_TOKEN" gh pr review "$PR" --repo "$REPO" --approve --body "Auto-approved via automated script."
   fi
 
-  REVIEW_DECISION="$(gh pr view "$PR" --repo "$REPO" --json reviewDecision --jq '.reviewDecision // ""')"
-  MERGEABLE_STATE="$(gh pr view "$PR" --repo "$REPO" --json mergeable --jq '.mergeable // ""')"
-  MERGE_STATE_STATUS="$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus // ""')"
+  for attempt in 1 2 3 4 5; do
+    REVIEW_DECISION="$(gh pr view "$PR" --repo "$REPO" --json reviewDecision --jq '.reviewDecision // ""')"
+    MERGEABLE_STATE="$(gh pr view "$PR" --repo "$REPO" --json mergeable --jq '.mergeable // ""')"
+    MERGE_STATE_STATUS="$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus // ""')"
+    if [[ "$REVIEW_DECISION" != "REVIEW_REQUIRED" && "$MERGEABLE_STATE" == "MERGEABLE" && ! "$MERGE_STATE_STATUS" =~ ^(BEHIND|BLOCKED|DIRTY|DRAFT|UNKNOWN)$ ]]; then
+      break
+    fi
+    if [[ "$attempt" -lt 5 ]]; then
+      sleep 2
+    fi
+  done
+
   if [[ "$APPROVE_PR" == "true" && -z "$APPROVAL_TOKEN" && "$REVIEW_DECISION" == "REVIEW_REQUIRED" ]]; then
     echo "Skipping PR #${PR} because approval is still required and APPROVAL_TOKEN is not configured."
     continue
