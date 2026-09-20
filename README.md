@@ -1,4 +1,4 @@
-# Global-money-entercper-I-
+# Global-money-interceptor-I-
 
 Express ingress service for the Global Money Interceptor platform.
 
