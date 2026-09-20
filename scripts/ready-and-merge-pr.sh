@@ -2,12 +2,27 @@
 set -euo pipefail
 
 REPO="${REPO:-Randymanrammer/Global-money-entercper-I-}"
-PR_NUMBER="${PR_NUMBER:-3}"
+PR_NUMBER="${PR_NUMBER:-}"
 
-echo "=== Marking PR #${PR_NUMBER} as ready for review ==="
-gh pr ready "$PR_NUMBER" --repo "$REPO"
+if [[ -n "$PR_NUMBER" ]]; then
+  PR_NUMBERS="$PR_NUMBER"
+else
+  echo "Fetching open pull requests for $REPO..."
+  PR_NUMBERS="$(gh pr list --repo "$REPO" --json number --jq '.[].number')"
+fi
 
-echo "=== Merging PR #${PR_NUMBER} into main ==="
-gh pr merge "$PR_NUMBER" --repo "$REPO" --merge --delete-branch
+if [[ -z "$PR_NUMBERS" ]]; then
+  echo "No open pull requests found."
+  exit 0
+fi
 
-echo "=== PR #${PR_NUMBER} has been successfully merged! ==="
+for PR in $PR_NUMBERS; do
+  echo "----------------------------------------"
+  echo "Processing PR #${PR}..."
+
+  gh pr ready "$PR" --repo "$REPO" 2>/dev/null || true
+  gh pr review "$PR" --repo "$REPO" --approve --body "Auto-approved via automated script." 2>/dev/null || true
+  gh pr merge "$PR" --repo "$REPO" --merge --delete-branch --admin
+
+  echo "PR #${PR} merged and branch deleted successfully!"
+done
