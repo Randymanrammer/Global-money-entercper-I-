@@ -29,7 +29,7 @@ jobs:
             exit 0
           fi
 
-          if [[ "$MERGE_STATE_STATUS" != "CLEAN" ]]; then
+          if [[ "$MERGE_STATE_STATUS" =~ ^(BLOCKED|DIRTY|DRAFT|UNKNOWN)$ ]]; then
             echo "Skipping merge because the PR is not currently mergeable (mergeStateStatus=$MERGE_STATE_STATUS)."
             exit 0
           fi

@@ -39,7 +39,7 @@ for PR in $PR_NUMBERS; do
     continue
   fi
 
-  if [[ "$MERGE_STATE_STATUS" != "CLEAN" ]]; then
+  if [[ "$MERGE_STATE_STATUS" =~ ^(BLOCKED|DIRTY|DRAFT|UNKNOWN)$ ]]; then
     echo "Skipping PR #${PR} because it is not currently mergeable (mergeStateStatus=$MERGE_STATE_STATUS)."
     continue
   fi
