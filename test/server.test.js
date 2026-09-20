@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 
-const { createApp } = require('../server');
+const { createApp, normalizeBaseDomain } = require('../server');
 
 function request(app, { path = '/', host = 'localhost' } = {}) {
   return new Promise((resolve, reject) => {
@@ -147,4 +147,24 @@ test('fallback mode still supports generic subdomains when no base domain is con
     message: 'Connected to deployment variant subdomain: preview',
     status: 'active',
   });
+});
+
+test('normalizeBaseDomain trims leading/trailing whitespace', () => {
+  assert.equal(normalizeBaseDomain('  example.com  '), 'example.com');
+});
+
+test('normalizeBaseDomain strips leading dots', () => {
+  assert.equal(normalizeBaseDomain('.example.com'), 'example.com');
+  assert.equal(normalizeBaseDomain('..example.com'), 'example.com');
+});
+
+test('normalizeBaseDomain handles leading whitespace and dots together', () => {
+  assert.equal(normalizeBaseDomain('   .example.com  '), 'example.com');
+});
+
+test('normalizeBaseDomain handles non-string values', () => {
+  assert.equal(normalizeBaseDomain(null), '');
+  assert.equal(normalizeBaseDomain(undefined), '');
+  assert.equal(normalizeBaseDomain(123), '');
+  assert.equal(normalizeBaseDomain({}), '');
 });

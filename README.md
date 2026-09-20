@@ -2,6 +2,13 @@
 
 Express ingress service for the Global Money Interceptor platform.
 
+## Environment variables
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `PORT` | Overrides the HTTP server port. | `8080` |
+| `BASE_DOMAIN` | Enables managed-domain routing and host allow-list enforcement. | _unset_ |
+
 ## Network map
 
 ### Application-owned behavior

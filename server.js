@@ -4,7 +4,11 @@ const DEFAULT_PORT = Number.parseInt(process.env.PORT || '8080', 10);
 const SERVICE_NAME = 'Global Money Interceptor Core';
 
 function normalizeBaseDomain(baseDomain = '') {
-  return baseDomain.toLowerCase().replace(/^\./, '').trim();
+  if (typeof baseDomain !== 'string') {
+    return '';
+  }
+
+  return baseDomain.trim().replace(/^\.+/, '').toLowerCase();
 }
 
 function parseHostname(host = '') {
