@@ -19,7 +19,7 @@ app.use((req, res, next) => {
   const parts = hostname.split('.');
 
   if (parts.length > 2) {
-    req.subdomain = parts[0].toLowerCase();
+    req.subdomain = parts.slice(0, -2).join('.').toLowerCase();
   } else {
     req.subdomain = null;
   }
