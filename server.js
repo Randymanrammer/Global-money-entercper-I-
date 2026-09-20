@@ -26,6 +26,10 @@ app.use((req, res, next) => {
     return next();
   }
 
+  if (BASE_DOMAIN && hostname === BASE_DOMAIN) {
+    return next();
+  }
+
   if (!BASE_DOMAIN && parts.length > 2 && hostname !== 'localhost') {
     req.subdomain = parts.slice(0, -2).join('.') || null;
   }

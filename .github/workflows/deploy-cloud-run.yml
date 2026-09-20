@@ -9,6 +9,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: global-money-interceptor
   REGION: us-central1
+  BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
   ARTIFACT_REGISTRY_REPOSITORY: global-money-interceptor
 
 permissions:
@@ -50,4 +51,4 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --port 8080 \
-            --set-env-vars NODE_ENV=production
+            --set-env-vars NODE_ENV=production,BASE_DOMAIN=$BASE_DOMAIN
