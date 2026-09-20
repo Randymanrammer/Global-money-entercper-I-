@@ -5,6 +5,7 @@ REPO="${REPO:-Randymanrammer/Global-money-entercper-I-}"
 PR_NUMBER="${PR_NUMBER:-}"
 APPROVE_PR="${APPROVE_PR:-true}"
 APPROVAL_TOKEN="${APPROVAL_TOKEN:-}"
+ADMIN_MERGE="${ADMIN_MERGE:-false}"
 
 if [[ -n "$PR_NUMBER" ]]; then
   PR_NUMBERS="$PR_NUMBER"
@@ -35,7 +36,12 @@ for PR in $PR_NUMBERS; do
     fi
   fi
 
-  gh pr merge "$PR" --repo "$REPO" --merge --delete-branch --admin
+  MERGE_ARGS=(--merge --delete-branch)
+  if [[ "$ADMIN_MERGE" == "true" ]]; then
+    MERGE_ARGS+=(--admin)
+  fi
+
+  gh pr merge "$PR" --repo "$REPO" "${MERGE_ARGS[@]}"
 
   echo "PR #${PR} merged and branch deleted successfully!"
 done
