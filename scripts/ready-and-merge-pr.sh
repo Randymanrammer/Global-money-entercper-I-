@@ -33,9 +33,9 @@ for PR in $PR_NUMBERS; do
   fi
 
   for attempt in 1 2 3 4 5; do
-    REVIEW_DECISION="$(gh pr view "$PR" --repo "$REPO" --json reviewDecision --jq '.reviewDecision // ""')"
-    MERGEABLE_STATE="$(gh pr view "$PR" --repo "$REPO" --json mergeable --jq '.mergeable // ""')"
-    MERGE_STATE_STATUS="$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus // ""')"
+    read -r REVIEW_DECISION MERGEABLE_STATE MERGE_STATE_STATUS < <(
+      gh pr view "$PR" --repo "$REPO" --json reviewDecision,mergeable,mergeStateStatus --jq '[.reviewDecision // "", .mergeable // "", .mergeStateStatus // ""] | @tsv'
+    )
     if [[ ! "$REVIEW_DECISION" =~ ^(REVIEW_REQUIRED|CHANGES_REQUESTED)$ && "$MERGEABLE_STATE" == "MERGEABLE" && ! "$MERGE_STATE_STATUS" =~ ^(BEHIND|BLOCKED|DIRTY|DRAFT|UNKNOWN)$ ]]; then
       break
     fi
