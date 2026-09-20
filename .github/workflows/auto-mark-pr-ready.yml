@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   auto-merge:
@@ -18,11 +18,19 @@ jobs:
           APPROVAL_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
+          REVIEW_DECISION="$(gh pr view "$PR_URL" --json reviewDecision --jq '.reviewDecision // \"\"')"
+
           if [[ -n "$APPROVAL_TOKEN" ]]; then
             GH_TOKEN="$APPROVAL_TOKEN" gh pr review "$PR_URL" --approve --body "Automated approval."
+            for _ in 1 2 3 4 5; do
+              REVIEW_DECISION="$(gh pr view "$PR_URL" --json reviewDecision --jq '.reviewDecision // \"\"')"
+              if [[ "$REVIEW_DECISION" != "REVIEW_REQUIRED" ]]; then
+                break
+              fi
+              sleep 2
+            done
           fi
 
-          REVIEW_DECISION="$(gh pr view "$PR_URL" --json reviewDecision --jq '.reviewDecision // \"\"')"
           MERGEABLE_STATE="$(gh pr view "$PR_URL" --json mergeable --jq '.mergeable // \"\"')"
           MERGE_STATE_STATUS="$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus // \"\"')"
           if [[ -z "$APPROVAL_TOKEN" && "$REVIEW_DECISION" == "REVIEW_REQUIRED" ]]; then
