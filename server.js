@@ -2,8 +2,7 @@ const express = require('express');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-
-app.use(express.json());
+const BASE_DOMAIN = (process.env.BASE_DOMAIN || '').toLowerCase().replace(/^\./, '');
 
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -15,13 +14,20 @@ app.get('/health', (req, res) => {
 
 app.use((req, res, next) => {
   const host = req.headers.host || '';
-  const hostname = host.split(':')[0];
-  const parts = hostname.split('.');
+  const hostname = host.split(':')[0].toLowerCase();
+  const parts = hostname.split('.').filter(Boolean);
 
-  if (parts.length > 2) {
-    req.subdomain = parts.slice(0, -2).join('.').toLowerCase();
-  } else {
-    req.subdomain = null;
+  req.subdomain = null;
+
+  if (BASE_DOMAIN && hostname.endsWith(`.${BASE_DOMAIN}`)) {
+    const suffixLength = BASE_DOMAIN.length + 1;
+    const candidate = hostname.slice(0, -suffixLength);
+    req.subdomain = candidate || null;
+    return next();
+  }
+
+  if (!BASE_DOMAIN && parts.length > 2 && hostname !== 'localhost') {
+    req.subdomain = parts.slice(0, -2).join('.') || null;
   }
 
   next();

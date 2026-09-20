@@ -9,6 +9,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: global-money-interceptor
   REGION: us-central1
+  ARTIFACT_REGISTRY_REPOSITORY: global-money-interceptor
 
 permissions:
   contents: read
@@ -28,23 +29,23 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for Container Registry
-        run: gcloud auth configure-docker gcr.io --quiet
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
 
       - name: Build Docker Image
         run: |
-          docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} .
-          docker tag gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY_REPOSITORY/$SERVICE_NAME:${{ github.sha }} .
+          docker tag $REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY_REPOSITORY/$SERVICE_NAME:${{ github.sha }} $REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY_REPOSITORY/$SERVICE_NAME:latest
 
-      - name: Push Image to Container Registry
+      - name: Push Image to Artifact Registry
         run: |
-          docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }}
-          docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY_REPOSITORY/$SERVICE_NAME:${{ github.sha }}
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY_REPOSITORY/$SERVICE_NAME:latest
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
-            --image gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY_REPOSITORY/$SERVICE_NAME:${{ github.sha }} \
             --region $REGION \
             --platform managed \
             --allow-unauthenticated \
