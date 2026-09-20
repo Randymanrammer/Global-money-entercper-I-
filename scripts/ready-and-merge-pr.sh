@@ -28,12 +28,14 @@ for PR in $PR_NUMBERS; do
     gh pr ready "$PR" --repo "$REPO"
   fi
 
-  if [[ "$APPROVE_PR" == "true" ]]; then
-    if [[ -n "$APPROVAL_TOKEN" ]]; then
-      GH_TOKEN="$APPROVAL_TOKEN" gh pr review "$PR" --repo "$REPO" --approve --body "Auto-approved via automated script."
-    else
-      gh pr review "$PR" --repo "$REPO" --approve --body "Auto-approved via automated script."
-    fi
+  if [[ "$APPROVE_PR" == "true" && -n "$APPROVAL_TOKEN" ]]; then
+    GH_TOKEN="$APPROVAL_TOKEN" gh pr review "$PR" --repo "$REPO" --approve --body "Auto-approved via automated script."
+  fi
+
+  REVIEW_DECISION="$(gh pr view "$PR" --repo "$REPO" --json reviewDecision --jq '.reviewDecision // ""')"
+  if [[ "$APPROVE_PR" == "true" && -z "$APPROVAL_TOKEN" && "$REVIEW_DECISION" == "REVIEW_REQUIRED" ]]; then
+    echo "Skipping PR #${PR} because approval is still required and APPROVAL_TOKEN is not configured."
+    continue
   fi
 
   MERGE_ARGS=(--merge --delete-branch)
