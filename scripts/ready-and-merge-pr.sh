@@ -33,8 +33,14 @@ for PR in $PR_NUMBERS; do
   fi
 
   REVIEW_DECISION="$(gh pr view "$PR" --repo "$REPO" --json reviewDecision --jq '.reviewDecision // ""')"
+  MERGE_STATE_STATUS="$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus // ""')"
   if [[ "$APPROVE_PR" == "true" && -z "$APPROVAL_TOKEN" && "$REVIEW_DECISION" == "REVIEW_REQUIRED" ]]; then
     echo "Skipping PR #${PR} because approval is still required and APPROVAL_TOKEN is not configured."
+    continue
+  fi
+
+  if [[ "$MERGE_STATE_STATUS" != "CLEAN" ]]; then
+    echo "Skipping PR #${PR} because it is not currently mergeable (mergeStateStatus=$MERGE_STATE_STATUS)."
     continue
   fi
 
