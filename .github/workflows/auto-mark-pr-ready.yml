@@ -10,13 +10,23 @@ permissions:
 
 jobs:
   auto-merge:
+    if: github.event.action == 'ready_for_review' || github.event.pull_request.draft == true
     runs-on: ubuntu-latest
     steps:
       - name: Ready and Merge PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPROVAL_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          gh pr ready "$PR_URL" || true
-          gh pr review "$PR_URL" --approve --body "Automated approval." || true
+          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            gh pr ready "$PR_URL"
+          fi
+
+          if [[ -n "$APPROVAL_TOKEN" ]]; then
+            GH_TOKEN="$APPROVAL_TOKEN" gh pr review "$PR_URL" --approve --body "Automated approval."
+          else
+            echo "Skipping approval because PR_AUTOMATION_TOKEN is not configured."
+          fi
+
           gh pr merge "$PR_URL" --merge --delete-branch
