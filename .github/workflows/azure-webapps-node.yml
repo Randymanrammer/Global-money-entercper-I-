@@ -1,5 +1,5 @@
-. V .
-. # This workflow will build and push a node.js application to an Azure Web App when a commit is pushed to your default branch.
+name: Deploy to Azure Web App
+# This workflow will build and push a node.js application to an Azure Web App when a commit is pushed to your default branch.
 #
 # This workflow assumes you have already created the target Azure App Service web app.
 # For instructions see https://docs.microsoft.com/en-us/azure/app-service/quickstart-nodejs?tabs=linux&pivots=development-environment-cli
@@ -24,7 +24,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
+  AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}    # set this repository variable to your application's name
   AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
   NODE_VERSION: '20.x'                # set this to the node version to use
 
@@ -56,6 +56,7 @@ jobs:
         path: .
 
   deploy:
+    if: ${{ env.AZURE_WEBAPP_NAME != '' && secrets.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
     permissions:
       contents: none
     runs-on: ubuntu-latest
