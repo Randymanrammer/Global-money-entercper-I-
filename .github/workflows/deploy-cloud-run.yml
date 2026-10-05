@@ -4,20 +4,69 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      target_site:
+        description: "Site id to deploy (site-01 ... site-20) or all"
+        required: true
+        default: push-default
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_NAME: global-money-interceptor
   REGION: us-central1
-  BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
   ARTIFACT_REGISTRY_REPOSITORY: global-money-interceptor
 
 permissions:
   contents: read
 
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build deployment matrix
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TARGET_SITE: ${{ github.event.inputs.target_site || 'push-default' }}
+        run: |
+          node <<'NODE' >> "$GITHUB_OUTPUT"
+          const fs = require('node:fs');
+
+          const config = JSON.parse(fs.readFileSync('ops-site-deployments.json', 'utf8'));
+          const sites = config.sites || [];
+          const eventName = process.env.EVENT_NAME;
+          const targetSite = process.env.TARGET_SITE || 'push-default';
+
+          let selected = [];
+
+          if (eventName === 'push' || targetSite === 'push-default') {
+            selected = sites.filter((site) => site.deployOnPush);
+          } else if (targetSite === 'all') {
+            selected = sites;
+          } else {
+            selected = sites.filter((site) => site.id === targetSite);
+          }
+
+          if (selected.length === 0) {
+            throw new Error(`No deployment targets selected for target_site="${targetSite}"`);
+          }
+
+          process.stdout.write(`matrix=${JSON.stringify({ site: selected })}\n`);
+          NODE
+
   deploy:
     runs-on: ubuntu-latest
+    needs: prepare-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    env:
+      SERVICE_NAME: ${{ matrix.site.serviceName }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -33,6 +82,40 @@ jobs:
 
       - name: Run routing and deployment verification tests
         run: npm test
+
+      - name: Resolve site BASE_DOMAIN
+        id: base-domain
+        env:
+          BASE_DOMAIN_SITE_01: ${{ vars.BASE_DOMAIN_SITE_01 || vars.BASE_DOMAIN }}
+          BASE_DOMAIN_SITE_02: ${{ vars.BASE_DOMAIN_SITE_02 }}
+          BASE_DOMAIN_SITE_03: ${{ vars.BASE_DOMAIN_SITE_03 }}
+          BASE_DOMAIN_SITE_04: ${{ vars.BASE_DOMAIN_SITE_04 }}
+          BASE_DOMAIN_SITE_05: ${{ vars.BASE_DOMAIN_SITE_05 }}
+          BASE_DOMAIN_SITE_06: ${{ vars.BASE_DOMAIN_SITE_06 }}
+          BASE_DOMAIN_SITE_07: ${{ vars.BASE_DOMAIN_SITE_07 }}
+          BASE_DOMAIN_SITE_08: ${{ vars.BASE_DOMAIN_SITE_08 }}
+          BASE_DOMAIN_SITE_09: ${{ vars.BASE_DOMAIN_SITE_09 }}
+          BASE_DOMAIN_SITE_10: ${{ vars.BASE_DOMAIN_SITE_10 }}
+          BASE_DOMAIN_SITE_11: ${{ vars.BASE_DOMAIN_SITE_11 }}
+          BASE_DOMAIN_SITE_12: ${{ vars.BASE_DOMAIN_SITE_12 }}
+          BASE_DOMAIN_SITE_13: ${{ vars.BASE_DOMAIN_SITE_13 }}
+          BASE_DOMAIN_SITE_14: ${{ vars.BASE_DOMAIN_SITE_14 }}
+          BASE_DOMAIN_SITE_15: ${{ vars.BASE_DOMAIN_SITE_15 }}
+          BASE_DOMAIN_SITE_16: ${{ vars.BASE_DOMAIN_SITE_16 }}
+          BASE_DOMAIN_SITE_17: ${{ vars.BASE_DOMAIN_SITE_17 }}
+          BASE_DOMAIN_SITE_18: ${{ vars.BASE_DOMAIN_SITE_18 }}
+          BASE_DOMAIN_SITE_19: ${{ vars.BASE_DOMAIN_SITE_19 }}
+          BASE_DOMAIN_SITE_20: ${{ vars.BASE_DOMAIN_SITE_20 }}
+        run: |
+          BASE_DOMAIN_ENV_KEY="${{ matrix.site.baseDomainEnv }}"
+          BASE_DOMAIN_VALUE="${!BASE_DOMAIN_ENV_KEY}"
+
+          if [ -z "$BASE_DOMAIN_VALUE" ]; then
+            echo "Missing repository variable for $BASE_DOMAIN_ENV_KEY" >&2
+            exit 1
+          fi
+
+          echo "base_domain=$BASE_DOMAIN_VALUE" >> "$GITHUB_OUTPUT"
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -63,4 +146,4 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --port 8080 \
-            --set-env-vars NODE_ENV=production,BASE_DOMAIN=$BASE_DOMAIN
+            --set-env-vars NODE_ENV=production,BASE_DOMAIN=${{ steps.base-domain.outputs.base_domain }}
