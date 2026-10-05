@@ -36,24 +36,33 @@ Express ingress service for the Global Money Interceptor platform.
 
 When `BASE_DOMAIN` is not configured, the service falls back to permissive development behavior and treats generic multi-label hosts as preview-style subdomains.
 
-## Deployment verification
+## Standardized multi-site deployment
 
-The Google Cloud Run workflow in `/home/runner/work/Global-money-entercper-I-/Global-money-entercper-I-/.github/workflows/deploy-cloud-run.yml` is expected to:
-- deploy on port `8080`
-- inject `BASE_DOMAIN` from repository variables
-- publish the container through Artifact Registry before Cloud Run deployment
+The Google Cloud Run workflow in `/home/runner/work/Global-money-entercper-I-/Global-money-entercper-I-/.github/workflows/deploy-cloud-run.yml` now uses one repeatable pipeline for multiple sites:
 
-## Readiness checklist
+- deployment targets are sourced from `/home/runner/work/Global-money-entercper-I-/Global-money-entercper-I-/ops-site-deployments.json`
+- push deployments use only targets where `deployOnPush` is `true`
+- manual deployments can deploy one site (`site-01` ... `site-20`) or all sites
+- each site resolves its own `BASE_DOMAIN` from `BASE_DOMAIN_SITE_XX` repository variables
 
-- [ ] `BASE_DOMAIN` is set to the production apex domain
-- [ ] Cloud Run domain mappings exist for the apex domain and required subdomains
-- [ ] DNS points the apex domain and required subdomains to Cloud Run
-- [ ] TLS is active for each mapped domain
-- [ ] `npm test` passes locally and in CI
-- [ ] `/health` responds on the root domain
-- [ ] `api.<BASE_DOMAIN>/status` responds successfully
-- [ ] Required client or hub subdomains resolve as single-label subdomains
-- [ ] No unsupported nested subdomains are routed to this service
+### Per-site configuration contract
+
+Each entry in `ops-site-deployments.json` must include:
+- `id` (example: `site-01`)
+- `serviceName` (Cloud Run service name)
+- `baseDomainEnv` (repository variable key such as `BASE_DOMAIN_SITE_01`)
+- `deployOnPush` (`true` or `false`)
+
+## Workforce rollout checklist (20-site deployment)
+
+- [ ] Confirm all 20 site entries are present and correct in `ops-site-deployments.json`
+- [ ] Confirm `serviceName` values map to existing Cloud Run services
+- [ ] Set repository variables `BASE_DOMAIN_SITE_01` ... `BASE_DOMAIN_SITE_20`
+- [ ] Confirm DNS and Cloud Run domain mappings for each site apex/domain
+- [ ] Run workflow manually with `target_site=site-01` as canary
+- [ ] Run workflow manually with `target_site=all` after canary validation
+- [ ] Verify `/health` and `api.<BASE_DOMAIN>/status` on each deployed site
+- [ ] Confirm no nested subdomain routing leaks per site
 
 ## Local validation
 

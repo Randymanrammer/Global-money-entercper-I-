@@ -1,0 +1,24 @@
+{
+  "sites": [
+    { "id": "site-01", "serviceName": "global-money-interceptor-site-01", "baseDomainEnv": "BASE_DOMAIN_SITE_01", "deployOnPush": true },
+    { "id": "site-02", "serviceName": "global-money-interceptor-site-02", "baseDomainEnv": "BASE_DOMAIN_SITE_02", "deployOnPush": false },
+    { "id": "site-03", "serviceName": "global-money-interceptor-site-03", "baseDomainEnv": "BASE_DOMAIN_SITE_03", "deployOnPush": false },
+    { "id": "site-04", "serviceName": "global-money-interceptor-site-04", "baseDomainEnv": "BASE_DOMAIN_SITE_04", "deployOnPush": false },
+    { "id": "site-05", "serviceName": "global-money-interceptor-site-05", "baseDomainEnv": "BASE_DOMAIN_SITE_05", "deployOnPush": false },
+    { "id": "site-06", "serviceName": "global-money-interceptor-site-06", "baseDomainEnv": "BASE_DOMAIN_SITE_06", "deployOnPush": false },
+    { "id": "site-07", "serviceName": "global-money-interceptor-site-07", "baseDomainEnv": "BASE_DOMAIN_SITE_07", "deployOnPush": false },
+    { "id": "site-08", "serviceName": "global-money-interceptor-site-08", "baseDomainEnv": "BASE_DOMAIN_SITE_08", "deployOnPush": false },
+    { "id": "site-09", "serviceName": "global-money-interceptor-site-09", "baseDomainEnv": "BASE_DOMAIN_SITE_09", "deployOnPush": false },
+    { "id": "site-10", "serviceName": "global-money-interceptor-site-10", "baseDomainEnv": "BASE_DOMAIN_SITE_10", "deployOnPush": false },
+    { "id": "site-11", "serviceName": "global-money-interceptor-site-11", "baseDomainEnv": "BASE_DOMAIN_SITE_11", "deployOnPush": false },
+    { "id": "site-12", "serviceName": "global-money-interceptor-site-12", "baseDomainEnv": "BASE_DOMAIN_SITE_12", "deployOnPush": false },
+    { "id": "site-13", "serviceName": "global-money-interceptor-site-13", "baseDomainEnv": "BASE_DOMAIN_SITE_13", "deployOnPush": false },
+    { "id": "site-14", "serviceName": "global-money-interceptor-site-14", "baseDomainEnv": "BASE_DOMAIN_SITE_14", "deployOnPush": false },
+    { "id": "site-15", "serviceName": "global-money-interceptor-site-15", "baseDomainEnv": "BASE_DOMAIN_SITE_15", "deployOnPush": false },
+    { "id": "site-16", "serviceName": "global-money-interceptor-site-16", "baseDomainEnv": "BASE_DOMAIN_SITE_16", "deployOnPush": false },
+    { "id": "site-17", "serviceName": "global-money-interceptor-site-17", "baseDomainEnv": "BASE_DOMAIN_SITE_17", "deployOnPush": false },
+    { "id": "site-18", "serviceName": "global-money-interceptor-site-18", "baseDomainEnv": "BASE_DOMAIN_SITE_18", "deployOnPush": false },
+    { "id": "site-19", "serviceName": "global-money-interceptor-site-19", "baseDomainEnv": "BASE_DOMAIN_SITE_19", "deployOnPush": false },
+    { "id": "site-20", "serviceName": "global-money-interceptor-site-20", "baseDomainEnv": "BASE_DOMAIN_SITE_20", "deployOnPush": false }
+  ]
+}
