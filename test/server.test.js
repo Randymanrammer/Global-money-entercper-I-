@@ -4,7 +4,7 @@ const http = require('node:http');
 
 const { createApp } = require('../server');
 
-function request(app, { path = '/', host = 'localhost' } = {}) {
+function request(app, { path = '/', host = 'localhost', headers = {} } = {}) {
   return new Promise((resolve, reject) => {
     const server = app.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
@@ -14,7 +14,7 @@ function request(app, { path = '/', host = 'localhost' } = {}) {
           port,
           path,
           method: 'GET',
-          headers: { Host: host },
+          headers: { Host: host, ...headers },
         },
         (res) => {
           const chunks = [];
@@ -147,4 +147,71 @@ test('fallback mode still supports generic subdomains when no base domain is con
     message: 'Connected to deployment variant subdomain: preview',
     status: 'active',
   });
+});
+
+test('hub endpoint exposes the operations-center definition and top actions', async () => {
+  const response = await request(createApp({ baseDomain: 'example.com' }), {
+    path: '/hub',
+    host: 'example.com',
+  });
+
+  assert.equal(response.statusCode, 200);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.purpose, 'operations-center');
+  assert.equal(payload.topActions.length, 3);
+  assert.equal(payload.realtime.authRequired, true);
+});
+
+test('improvements endpoint returns the 100-item prioritized backlog', async () => {
+  const response = await request(createApp({ baseDomain: 'example.com' }), {
+    path: '/hub/improvements',
+    host: 'example.com',
+  });
+
+  assert.equal(response.statusCode, 200);
+  const payload = JSON.parse(response.body);
+  assert.equal(payload.total, 100);
+  assert.deepEqual(payload.waves, { critical: 10, 'high-value': 30, optimization: 60 });
+});
+
+test('status system endpoint requires authentication token', async () => {
+  const app = createApp({ baseDomain: 'example.com', hubToken: 'secure-token' });
+  const unauthorized = await request(app, {
+    path: '/status/system',
+    host: 'example.com',
+  });
+  assert.equal(unauthorized.statusCode, 401);
+
+  const authorized = await request(app, {
+    path: '/status/system',
+    host: 'example.com',
+    headers: { 'x-hub-token': 'secure-token' },
+  });
+  assert.equal(authorized.statusCode, 200);
+});
+
+test('polling fallback requires auth and role/channel authorization', async () => {
+  const app = createApp({ baseDomain: 'example.com', hubToken: 'secure-token' });
+
+  const missingAuth = await request(app, {
+    path: '/events/poll?role=client&channel=customer',
+    host: 'example.com',
+  });
+  assert.equal(missingAuth.statusCode, 401);
+
+  const forbiddenChannel = await request(app, {
+    path: '/events/poll?role=client&channel=office',
+    host: 'example.com',
+    headers: { 'x-hub-token': 'secure-token' },
+  });
+  assert.equal(forbiddenChannel.statusCode, 403);
+
+  const allowed = await request(app, {
+    path: '/events/poll?role=client&channel=customer',
+    host: 'example.com',
+    headers: { 'x-hub-token': 'secure-token' },
+  });
+  assert.equal(allowed.statusCode, 200);
+  const payload = JSON.parse(allowed.body);
+  assert.equal(payload.mode, 'polling-fallback');
 });

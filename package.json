@@ -8,6 +8,8 @@
     "test": "node --test"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1",
+    "socket.io": "^4.8.1"
   }
 }

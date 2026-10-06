@@ -2,6 +2,22 @@
 
 Express ingress service for the Global Money Interceptor platform.
 
+## Hub + realtime architecture
+
+- `GET /hub` defines the core hub as an `operations-center` and returns its top three operator actions.
+- WebSocket support is enabled with Socket.IO when the server starts.
+- Authenticated socket clients can join role-based channels:
+  - `admin`: `office`, `alerts`, `customer`
+  - `staff`: `office`, `customer`
+  - `client`: `customer`
+- Heartbeat monitoring, message rate limiting, and payload validation are enforced for socket traffic.
+- `GET /events/poll` provides a token-protected polling fallback when sockets are unavailable.
+- `GET /status/system` provides token-protected uptime, request latency, and socket metrics.
+- `GET /hub/improvements` exposes a 100-item prioritized backlog split into:
+  - 10 critical
+  - 30 high-value
+  - 60 optimization
+
 ## Network map
 
 ### Application-owned behavior
@@ -61,3 +77,9 @@ The Google Cloud Run workflow in `/home/runner/work/Global-money-entercper-I-/Gl
 npm test
 npm start
 ```
+
+## Office runbook
+
+- If `/health` fails, restart service process/container and verify port `8080`.
+- If sockets degrade, verify `/status/system`, then use `/events/poll` until socket metrics recover.
+- If host traffic is rejected, check `BASE_DOMAIN`, DNS records, and Cloud Run domain mapping.
