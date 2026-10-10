@@ -8,9 +8,10 @@ Express ingress service for the Global Money Interceptor platform.
 - Port `8080` is the only runtime port for the service.
 - `GET /health` returns service health for root and allowed hosts.
 - `GET /status` is reserved for the `api` subdomain.
+- `GET /socket/health` returns socket readiness metadata for allowed hosts.
 - Apex domain (`BASE_DOMAIN`) serves the primary client/root experience.
 - `www.<BASE_DOMAIN>` is treated as the same root experience.
-- Single-label custom subdomains such as `clienthub.<BASE_DOMAIN>` are treated as deployment variants.
+- Single-label custom subdomains such as `clienthub.<BASE_DOMAIN>`, `hub.<BASE_DOMAIN>`, and `socket.<BASE_DOMAIN>` are treated as deployment variants.
 
 ### External infrastructure dependencies
 - DNS records for the apex domain and each allowed single-label subdomain.
@@ -52,7 +53,8 @@ The Google Cloud Run workflow in `/home/runner/work/Global-money-entercper-I-/Gl
 - [ ] `npm test` passes locally and in CI
 - [ ] `/health` responds on the root domain
 - [ ] `api.<BASE_DOMAIN>/status` responds successfully
-- [ ] Required client or hub subdomains resolve as single-label subdomains
+- [ ] `api.<BASE_DOMAIN>/socket/health` returns socket readiness metadata
+- [ ] Required client, hub, or socket subdomains resolve as single-label subdomains
 - [ ] No unsupported nested subdomains are routed to this service
 
 ## Local validation

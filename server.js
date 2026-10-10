@@ -2,6 +2,7 @@ const express = require('express');
 
 const DEFAULT_PORT = Number.parseInt(process.env.PORT || '8080', 10);
 const SERVICE_NAME = 'Global Money Interceptor Core';
+const RESERVED_ROOT_SUBDOMAINS = new Set(['www', 'api']);
 
 function normalizeBaseDomain(baseDomain = '') {
   return baseDomain.toLowerCase().replace(/^\./, '').trim();
@@ -111,6 +112,7 @@ function analyzeHost(host, baseDomain) {
 function createApp({ baseDomain = process.env.BASE_DOMAIN } = {}) {
   const app = express();
   const normalizedBaseDomain = normalizeBaseDomain(baseDomain);
+  app.disable('x-powered-by');
 
   app.use((req, res, next) => {
     const routing = analyzeHost(req.headers.host || '', normalizedBaseDomain);
@@ -150,8 +152,17 @@ function createApp({ baseDomain = process.env.BASE_DOMAIN } = {}) {
     return next();
   });
 
+  app.get('/socket/health', (req, res) => {
+    res.status(200).json({
+      socket: 'ready',
+      mode: 'interceptor',
+      subdomain: req.subdomain || null,
+      baseDomain: normalizedBaseDomain || null,
+    });
+  });
+
   app.get('/', (req, res) => {
-    if (req.subdomain && !['www', 'api'].includes(req.subdomain)) {
+    if (req.subdomain && !RESERVED_ROOT_SUBDOMAINS.has(req.subdomain)) {
       return res.status(200).json({
         message: `Connected to deployment variant subdomain: ${req.subdomain}`,
         status: 'active',
@@ -161,6 +172,13 @@ function createApp({ baseDomain = process.env.BASE_DOMAIN } = {}) {
     return res
       .status(200)
       .send('Instant Online Success Inc. - Master Platform Operational');
+  });
+
+  app.use((req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      path: req.path,
+    });
   });
 
   return app;

@@ -100,6 +100,29 @@ test('single-label deployment subdomains resolve to active variants', async () =
   });
 });
 
+test('hub and socket subdomains are treated as valid deployment variants', async () => {
+  const [hubResponse, socketResponse] = await Promise.all([
+    request(createApp({ baseDomain: 'example.com' }), {
+      host: 'hub.example.com',
+    }),
+    request(createApp({ baseDomain: 'example.com' }), {
+      host: 'socket.example.com',
+    }),
+  ]);
+
+  assert.equal(hubResponse.statusCode, 200);
+  assert.deepEqual(JSON.parse(hubResponse.body), {
+    message: 'Connected to deployment variant subdomain: hub',
+    status: 'active',
+  });
+
+  assert.equal(socketResponse.statusCode, 200);
+  assert.deepEqual(JSON.parse(socketResponse.body), {
+    message: 'Connected to deployment variant subdomain: socket',
+    status: 'active',
+  });
+});
+
 test('localhost remains valid for local client verification', async () => {
   const response = await request(createApp({ baseDomain: 'example.com' }), {
     host: 'localhost:3000',
@@ -146,5 +169,33 @@ test('fallback mode still supports generic subdomains when no base domain is con
   assert.deepEqual(JSON.parse(response.body), {
     message: 'Connected to deployment variant subdomain: preview',
     status: 'active',
+  });
+});
+
+test('socket health endpoint reports readiness metadata', async () => {
+  const response = await request(createApp({ baseDomain: 'example.com' }), {
+    path: '/socket/health',
+    host: 'api.example.com',
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), {
+    socket: 'ready',
+    mode: 'interceptor',
+    subdomain: 'api',
+    baseDomain: 'example.com',
+  });
+});
+
+test('unknown routes return clean 404 payloads', async () => {
+  const response = await request(createApp({ baseDomain: 'example.com' }), {
+    path: '/missing-route',
+    host: 'example.com',
+  });
+
+  assert.equal(response.statusCode, 404);
+  assert.deepEqual(JSON.parse(response.body), {
+    error: 'Not Found',
+    path: '/missing-route',
   });
 });
