@@ -1,0 +1,15 @@
+# Runs on every pull request: nothing merges unless it builds.
+name: check
+on: { pull_request: { branches: [main] } }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then npm install; fi
+      - run: if [ -f tsconfig.json ]; then npx tsc --noEmit; fi
+      - run: if [ -f package.json ] && grep -q '"build"' package.json; then npm run build; fi
